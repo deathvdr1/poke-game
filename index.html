@@ -42,13 +42,23 @@
              font-size: 1.0rem;
         }
         body:lang(ja) .retro-btn.attack-btn {
-            font-size: 1.0rem; /* UPDATED: Made larger */
+            font-size: 0.85rem; /* NEW: Smaller size for mobile */
             line-height: 1.2;
+        }
+        @media (min-width: 768px) {
+            body:lang(ja) .retro-btn.attack-btn {
+                font-size: 1.0rem; /* Restore original size for desktop */
+            }
         }
         body:lang(en) .retro-btn.attack-btn {
             /* MODIFIED: Made attack buttons full width */
-            font-size: 0.75rem; /* UPDATED: Made larger */
+            font-size: 0.65rem; /* NEW: Smaller size for mobile */
             width: 100%;
+        }
+        @media (min-width: 768px) {
+            body:lang(en) .retro-btn.attack-btn {
+                font-size: 0.75rem; /* Restore original size for desktop */
+            }
         }
         /* MODIFIED: Make Japanese attack buttons full width too */
         body:lang(ja) .retro-btn.attack-btn {
@@ -363,6 +373,10 @@
         #video-overlay {
             z-index: 200; /* On top of everything */
         }
+        /* NEW: Make log review overlay appear on top */
+        #log-review-overlay {
+            z-index: 210; /* On top of victory screen */
+        }
         #attack-video {
             border: 4px solid #ffcc00; /* Retro yellow border */
             border-radius: 8px;
@@ -501,6 +515,8 @@
             </div>
             <!-- Updated button color -->
             <button id="restart-button" class="retro-btn mt-8 text-base md:text-xl px-8 py-4" style="background-color: #610b9d;">...</button>
+            <!-- NEW: Show Log Button -->
+            <button id="show-log-button" class="retro-btn mt-4 text-base md:text-xl px-6 py-3" style="background-color: #4a5568;">...</button>
         </div>
     </div>
 
@@ -519,6 +535,19 @@
             Your browser does not support the video tag.
         </video>
     </div>
+
+    <!-- NEW: Log Review Overlay -->
+    <div id="log-review-overlay" class="hidden fixed inset-0 bg-black/90 p-4 flex items-center justify-center">
+        <div class="help-screen w-full max-w-2xl"> <!-- Re-using help-screen style -->
+            <h2 id="log-review-title" class="text-center">...</h2>
+            <!-- Re-using battle-log style for the container -->
+            <div id="log-review-content" class="battle-log h-64 md:h-80 text-xs my-4">
+                <!-- Log content will be copied here by JS -->
+            </div>
+            <button id="close-log-button" class="retro-btn !text-base md:!text-xl !px-8 !py-4 w-full" style="background-color: #fa3df8; color: #fbbfff;">...</button>
+        </div>
+    </div>
+
 
     <script>
         // --- TRANSLATION DATA ---
@@ -560,7 +589,9 @@
                 'help_rule_1': 'Basic Attacks deal 20 Damage.',
                 'help_rule_2': 'Medium Attacks deal 30 Damage.',
                 'help_rule_3': 'Heavy Attacks deal 50 Damage, but can ONLY be used when your criteria is fullfilled!',
-                'help_back': 'Back'
+                'help_back': 'Back',
+                'view_log': 'View Final Log', // NEW
+                'log_review_title': 'Final Battle Log' // NEW
             },
             'ja': {
                 'title_battle': 'ポケモンバトル',
@@ -599,13 +630,17 @@
                 'help_rule_1': '「じゃく」こうげきは 20ダメージ。',
                 'help_rule_2': '「ちゅう」こうげきは 30ダメージ。',
                 'help_rule_3': '「きょう」こうげきは 50ダメージ。ただし、HPが 50いか のときだけ つかえる！',
-                'help_back': 'もどる'
+                'help_back': 'もどる',
+                'view_log': 'さいしゅうログ', // NEW
+                'log_review_title': 'さいしゅうバトルログ' // NEW
             }
         };
 
+        // --- DELETED: Removed the first, outdated MISS_MESSAGES declaration ---
+
+        // --- NEW: Replaced MISS_MESSAGES with user's custom list ---
         const MISS_MESSAGES = {
             'en': [
-                "it tripped on a pebble!",
                 "it's brain momentarily believed it was JMike the Pirate and went searching for buried treasure.",
                 "it got an alert from Discord about an urgent hype squad post. Priorities, people.",
                 "it was about to finish, but Chaz sent it a video of a cat singing opera.",
@@ -617,59 +652,37 @@
                 "It's monitor briefly turned into a treasure map, thanks, JMike the Pirate's influence.",
                 "it got a text from Chaz that was just a picture of a suspiciously smug cat.",
                 "it got a text from Chaz that Movie night was About to start.",
-                "It couldn't attack as it was mentally preparing a lecture from Joey the Professor on being a reinsurer."
-                
-                
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+                "It couldn't attack as it was mentally preparing a lecture from Joey the Professor on being a reinsurer.",
+                "I got a spontaneous flash of inspiration regarding a new hat design for Chely.",
+                "The gentle rhythm of my work was interrupted when I heard Croket the Frog doing stand-up comedy in my head.",
+                "I got distracted by a sudden, urgent need to know what Chely's favorite type of cloud is.",
+                "I had to stop and mentally high-five Croket the Frog for being so impeccably green.",
+                "I briefly forgot the task because I was trying to imitate the deep, thoughtful gaze of Croket the Frog.",
+                "I blame Chely; the thought of her riding a tiny unicycle was too powerful to ignore."
             ],
             'ja': [
-                "こいしにつまずいた！",
-                "ちょうちょにみとれてしまった！",
-                "くしゃみをしてはずしてしまった！",
-                "あいてのスタイルがすごすぎてこわい！",
-                "なにをしていたかわすれてしまった！",
-                "ダンスのれんしゅうをすることにした。",
-                "おもしろいジョークをおもいだしてとまった。",
-                // NEW Crypto Messages (Translated)
-                "こうげきのとちゅうにポートフォリオをかくにんしようとした！",
-                "ハードウェアウォレットがおちていて、すべってしまった！",
-                "「ブロックチェーンってなに？」とせつめいをはじめた！",
-                "じぶんのあしにラグプルされてしまった！",
-                "こうげきをNFTにミNTするのにいそがしかった。",
-                "こうげきのガスだいがたかすぎた！",
-                "「月までとどけ！」とさけんで、あいてをとびこえた。",
-                "ディップ（ひざ）をかおうとしていた。",
-                "ちからを「ガチホ」することにした。",
-                "バランスをせいさんされてしまった。"
+                "のうみそが いっしゅん じぶんを かいぞくJマイクだと おもいこみ、うまった たからを さがしにいった。",
+                "Discordから キンキュウの ハイプスクワッドの とうこうアラートが きた。ゆうせんじこうだ、みんな。",
+                "おわらせるところだったが、チャズから オペラをうたうネコの どうがが おくられてきた。",
+                "Discordから キンキュウの ハイプスクワッドの とうこうアラートが きた。ゆうせんじこうだ、みんな。",
+                "『かいぞくJマイクは つぎに なにを ぬすむだろう？』と ちいさなこえが ささやき、かんがえこんでしまった。",
+                "まるごふんかんも しんじんチャットを チェックしていないことに きづいてしまった。これは いちだいじだ。",
+                "しゅうちゅうモードだったのに、チャズに『ネコをつついてみろ』と そそのかされた。",
+                "REの トランスじょうたいに おちいり、すべての きおくを うしなった。",
+                "かいぞくJマイクの えいきょうで、モニターが いちじてきに たからのちずに なった。",
+                "チャズから、いぶかしげな ドヤがおのネコの しゃしんだけが おくられてきた。",
+                "チャズから『もうすぐ えいがのじかんだ』と メールが きた。",
+                "ジョーイきょうじゅから さいほけんについて レクチャーを うけるための こころのじゅんびを していて こうげきできなかった。",
+                "チェリーの あたらしい ぼうしのデザインにかんする とつぜんの ひらめきが...！",
+                "あたまのなかで クロケット・ザ・フロッグが スタンドアップコメディを はじめ、おだやかな しごとのリズムが みだされた。",
+                "チェリーの すきな くもの しゅるいを しらなければという、とつぜんの きんきゅうの しょうどうに かられた。",
+                "クロケット・ザ・フロッグの あまりにも かんぺきな みどりいろに、こころのなかで ハイタッチするしか なかった。",
+                "クロケット・ザ・フロッグの ふかく ものおもいに ふける まなざしを マネしようとして、タスクを わすれた。",
+                "チェリーのせいだ。かのじょが ちいさな いちりんしゃに のっている すがたを そうぞうしたら、むしできなかった。"
             ]
         };
+        // --- END of replaced messages ---
+
 
         // --- DATA ---
         // REPLACE IMAGE URLS HERE WITH YOUR OWN
@@ -801,12 +814,17 @@
         const victoryText = document.getElementById('victory-text');
         const restartButton = document.getElementById('restart-button');
         const mainTitle = document.getElementById('main-title');
-
         const languageToggleButton = document.getElementById('language-toggle');
-
         // NEW: Video Elements
         const videoOverlay = document.getElementById('video-overlay');
         const attackVideo = document.getElementById('attack-video');
+
+        // NEW: Log Review Elements
+        const logReviewOverlay = document.getElementById('log-review-overlay');
+        const logReviewTitle = document.getElementById('log-review-title'); // <-- FIX: Added this line
+        const logReviewContent = document.getElementById('log-review-content');
+        const showLogButton = document.getElementById('show-log-button');
+        const closeLogButton = document.getElementById('close-log-button');
 
         // --- FUNCTIONS ---
 
@@ -898,7 +916,12 @@
                         victoryText.classList.add('victory-text-draw');
                     }
                 }
+                showLogButton.textContent = getText('view_log'); // NEW
             }
+
+            // NEW: Log Review Screen
+            logReviewTitle.textContent = getText('log_review_title');
+            closeLogButton.textContent = getText('help_back'); // Re-using 'back' text
 
             // Update button text
             languageToggleButton.textContent = (currentLanguage === 'en') ? '日本語' : 'English';
@@ -941,12 +964,14 @@
             battleScreen.classList.add('hidden');
             victoryScreen.classList.add('hidden'); 
             helpScreen.classList.add('hidden'); // NEW
+            logReviewOverlay.classList.add('hidden'); // NEW
 
             // Hide end game button
             endGameButton.classList.add('hidden');
             
             // Reset log
             battleLog.innerHTML = `<p id="battle-log-start">${getText('log_welcome')}</p>`;
+            logReviewContent.innerHTML = ''; // NEW: Clear the review log
             
             // Update all text to current language
             updateAllText();
@@ -1114,8 +1139,8 @@
                 const baseAttack = playerPokemon.attacks[index]; // Get base data for type
                 const button = document.createElement('button');
                 button.textContent = attack.name;
-                // MODIFIED: Added w-full
-                button.className = `retro-btn !leading-tight !p-2 md:!p-4 attack-btn type-${playerPokemon.type}-btn w-full`; // UPDATED: !p-1 md:!p-3 -> !p-2 md:!p-4
+                // MODIFIED: Added w-full, and changed mobile padding from p-2 to px-2 pt-2 pb-3
+                button.className = `retro-btn !leading-tight !px-2 !pt-2 !pb-3 md:!p-4 attack-btn type-${playerPokemon.type}-btn w-full`; // UPDATED: !p-2 -> !px-2 !pt-2 !pb-3
                 
                 if (baseAttack.type === 'heavy') {
                     button.id = 'heavy-attack-btn';
@@ -1170,6 +1195,7 @@
             
             // The rest of the logic happens *after* the video plays (or fails)
             attackVideo.onended = () => {
+                attackVideo.onended = null; // <-- FIX: Prevent double-fire
                 videoOverlay.classList.add('hidden'); // Hide overlay
                 animateAttack(playerPokemonImg, true); // Play sprite wiggle
 
@@ -1219,6 +1245,7 @@
 
             // The rest of the logic happens *after* the video plays
             attackVideo.onended = () => {
+                attackVideo.onended = null; // <-- FIX: Prevent double-fire
                 videoOverlay.classList.add('hidden'); // Hide overlay
                 animateAttack(aiPokemonImg, false); // Play sprite wiggle
 
@@ -1407,6 +1434,10 @@
         */
         function showVictoryScreen(winner, messageKey) {
             gameInProgress = false;
+
+            // NEW: Capture the final log *before* hiding the battle screen
+            logReviewContent.innerHTML = battleLog.innerHTML;
+            logReviewContent.scrollTop = logReviewContent.scrollHeight; // Scroll to bottom
             
             // Hide the end game button
             endGameButton.classList.add('hidden');
@@ -1435,6 +1466,7 @@
             }
 
             restartButton.textContent = getText('play_again');
+            showLogButton.textContent = getText('view_log'); // NEW
 
             // Animate transition
             setTimeout(() => {
@@ -1514,6 +1546,19 @@
 
         languageToggleButton.addEventListener('click', toggleLanguage);
 
+        // NEW: Log Review Listeners
+        showLogButton.addEventListener('click', () => {
+            logReviewOverlay.classList.remove('hidden');
+            // Ensure text is correct if language was toggled on victory screen
+            logReviewTitle.textContent = getText('log_review_title');
+            closeLogButton.textContent = getText('help_back');
+            logReviewContent.scrollTop = logReviewContent.scrollHeight; // Scroll to bottom
+        });
+        closeLogButton.addEventListener('click', () => {
+            logReviewOverlay.classList.add('hidden');
+        });
+
+
         // NEW: Handle video errors so the game doesn't hang
         attackVideo.onerror = () => {
             console.warn('Video file not found or failed to load. Skipping animation.');
@@ -1529,4 +1574,3 @@
     </script>
 </body>
 </html>
-
