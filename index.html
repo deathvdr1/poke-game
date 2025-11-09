@@ -42,12 +42,12 @@
              font-size: 1.0rem;
         }
         body:lang(ja) .retro-btn.attack-btn {
-            font-size: 0.85rem;
+            font-size: 1.0rem; /* UPDATED: Made larger */
             line-height: 1.2;
         }
         body:lang(en) .retro-btn.attack-btn {
             /* MODIFIED: Made attack buttons full width */
-            font-size: 0.5rem;
+            font-size: 0.75rem; /* UPDATED: Made larger */
             width: 100%;
         }
         /* MODIFIED: Make Japanese attack buttons full width too */
@@ -359,12 +359,24 @@
             color: #f87171; /* Red */
         }
 
+        /* --- NEW: Video Overlay --- */
+        #video-overlay {
+            z-index: 200; /* On top of everything */
+        }
+        #attack-video {
+            border: 4px solid #ffcc00; /* Retro yellow border */
+            border-radius: 8px;
+            max-width: 90%;
+            max-height: 90%;
+            background-color: #000; /* Black bg in case video is letterboxed */
+        }
+
     </style>
 </head>
 <!-- Set default language for the body -->
 <body lang="en" class="flex flex-col items-center justify-center min-h-screen p-4">
 
-    <!-- Pokeball Logo - Replace '...' with your image path -->
+    <!-- Pokeball Logo -->
     <img src="./lgo.png" 
          alt="Pokeball" 
          class="pokeball-logo" 
@@ -499,6 +511,15 @@
     <!-- NEW: Language Toggle Button -->
     <button id="language-toggle" class="retro-btn">EN / JA</button>
 
+    <!-- NEW: Video Attack Overlay -->
+    <div id="video-overlay" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center">
+        <!-- Added muted and playsinline for better autoplay compatibility -->
+        <video id="attack-video" width="480" height="360" muted playsinline>
+            <!-- No source initially, will be set by JS -->
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
     <script>
         // --- TRANSLATION DATA ---
         const UI_TEXT = {
@@ -577,7 +598,6 @@
                 'help_title': 'あそびかた',
                 'help_rule_1': '「じゃく」こうげきは 20ダメージ。',
                 'help_rule_2': '「ちゅう」こうげきは 30ダメージ。',
-                // FIX: Removed invalid newline character
                 'help_rule_3': '「きょう」こうげきは 50ダメージ。ただし、HPが 50いか のときだけ つかえる！',
                 'help_back': 'もどる'
             }
@@ -617,7 +637,7 @@
                 "ハードウェアウォレットがおちていて、すべってしまった！",
                 "「ブロックチェーンってなに？」とせつめいをはじめた！",
                 "じぶんのあしにラグプルされてしまった！",
-                "こうげきをNFTにミントするのにいそがしかった。",
+                "こうげきをNFTにミNTするのにいそがしかった。",
                 "こうげきのガスだいがたかすぎた！",
                 "「月までとどけ！」とさけんで、あいてをとびこえた。",
                 "ディップ（ひざ）をかおうとしていた。",
@@ -758,6 +778,10 @@
         const mainTitle = document.getElementById('main-title');
 
         const languageToggleButton = document.getElementById('language-toggle');
+
+        // NEW: Video Elements
+        const videoOverlay = document.getElementById('video-overlay');
+        const attackVideo = document.getElementById('attack-video');
 
         // --- FUNCTIONS ---
 
@@ -1066,7 +1090,7 @@
                 const button = document.createElement('button');
                 button.textContent = attack.name;
                 // MODIFIED: Added w-full
-                button.className = `retro-btn !leading-tight !p-1 md:!p-3 attack-btn type-${playerPokemon.type}-btn w-full`; 
+                button.className = `retro-btn !leading-tight !p-2 md:!p-4 attack-btn type-${playerPokemon.type}-btn w-full`; // UPDATED: !p-1 md:!p-3 -> !p-2 md:!p-4
                 
                 if (baseAttack.type === 'heavy') {
                     button.id = 'heavy-attack-btn';
@@ -1078,6 +1102,17 @@
             });
         }
 
+        /**
+         * NEW: Generates a video file name from an attack name.
+         * e.g., "Volt Tackle" -> "./volt-tackle.mp4"
+         * @param {string} attackName - The English attack name.
+         * @returns {string} The formatted video file name.
+         */
+        function getAttackVideoSrc(attackName) {
+            // Assumes videos are in the same folder, named like 'quick-attack.mp4'
+            return './' + attackName.toLowerCase().replace(/\s+/g, '-') + '.mp4';
+        }
+
 
         /**
         * Handles the player's attack action.
@@ -1087,7 +1122,9 @@
             if (!isPlayerTurn || !gameInProgress) return;
 
             const attack = playerPokemon.attacks[attackIndex];
+            // Get both translated and base-English attack names
             const attackName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).attacks[attackIndex].name;
+            const baseAttackName = POKEMON_DATA['en'].find(p => p.id === playerPokemon.id).attacks[attackIndex].name;
             const pokemonName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).name;
 
             // Check heavy attack rule
@@ -1097,11 +1134,20 @@
             }
             
             isPlayerTurn = false;
-            animateAttack(playerPokemonImg, true);
+            updateUI(); // Disable buttons immediately
             logMessage(getText('log_player_command', pokemonName, attackName));
+            
+            // --- NEW VIDEO LOGIC ---
+            const videoSrc = getAttackVideoSrc(baseAttackName);
+            attackVideo.src = videoSrc;
+            attackVideo.muted = true; // Ensure muted for autoplay
+            videoOverlay.classList.remove('hidden');
+            
+            // The rest of the logic happens *after* the video plays (or fails)
+            attackVideo.onended = () => {
+                videoOverlay.classList.add('hidden'); // Hide overlay
+                animateAttack(playerPokemonImg, true); // Play sprite wiggle
 
-            // Use setTimeout to create a pause for readability
-            setTimeout(() => {
                 // Check for miss
                 const missReasons = MISS_MESSAGES[currentLanguage];
                 if (Math.random() < MISS_CHANCE) {
@@ -1118,11 +1164,16 @@
                 if (checkGameOver()) return;
                 
                 // AI's turn
-                setTimeout(aiTurn, 1500);
+                setTimeout(aiTurn, 1500); // Wait 1.5s before AI attacks
+            };
 
-            }, 1000);
-
-            updateUI(); // Disable buttons immediately
+            attackVideo.play().catch(e => {
+                // Handle cases where play() is interrupted or fails
+                console.warn("Video play failed:", e);
+                // Manually trigger the onended logic to continue the game
+                if(attackVideo.onended) attackVideo.onended();
+            });
+            // --- END NEW VIDEO LOGIC ---
         }
 
         /**
@@ -1133,11 +1184,19 @@
 
             const { attack, attackName, pokemonName } = getAiAttack();
             
-            animateAttack(aiPokemonImg, false);
             logMessage(getText('log_ai_attack', pokemonName, attackName));
 
-            // Use setTimeout for readability
-            setTimeout(() => {
+            // --- NEW VIDEO LOGIC ---
+            const videoSrc = getAttackVideoSrc(attack.name); // Use the English name from the object
+            attackVideo.src = videoSrc;
+            attackVideo.muted = true; // Ensure muted for autoplay
+            videoOverlay.classList.remove('hidden');
+
+            // The rest of the logic happens *after* the video plays
+            attackVideo.onended = () => {
+                videoOverlay.classList.add('hidden'); // Hide overlay
+                animateAttack(aiPokemonImg, false); // Play sprite wiggle
+
                 // Check for miss
                 const missReasons = MISS_MESSAGES[currentLanguage];
                 if (Math.random() < MISS_CHANCE) {
@@ -1153,7 +1212,15 @@
                 isPlayerTurn = true;
                 updateUI();
                 checkGameOver();
-            }, 1000);
+            };
+
+            attackVideo.play().catch(e => {
+                // Handle cases where play() is interrupted or fails
+                console.warn("Video play failed:", e);
+                // Manually trigger the onended logic to continue the game
+                if(attackVideo.onended) attackVideo.onended();
+            });
+            // --- END NEW VIDEO LOGIC ---
         }
 
         /**
@@ -1163,7 +1230,7 @@
         function getAiAttack() {
             const attacks = aiPokemon.attacks;
             const heavyAttack = attacks.find(a => a.type === 'heavy');
-            const mediumAttack = attacks.find(a => a.damage === 40);
+            const mediumAttack = attacks.find(a => a.damage === 40 || a.damage === 30); // Broader search
             const basicAttacks = attacks.filter(a => a.damage === 20);
             
             const aiLangData = POKEMON_DATA[currentLanguage].find(p => p.id === aiPokemon.id);
@@ -1171,30 +1238,36 @@
             let chosenAttack = null;
 
             // Rule 1: If AI HP < 50, high chance to use Heavy Attack.
-            if (aiHP < 50 && Math.random() < 0.75) { // 75% chance
+            if (heavyAttack && aiHP < 50 && Math.random() < 0.75) { // 75% chance
                 logMessage(getText('log_ai_focus', pokemonName));
                 chosenAttack = heavyAttack;
             }
             // Rule 2: If Player HP is low, try to finish.
             else if (playerHP <= 40) {
                 // Use heavy if available, otherwise medium
-                chosenAttack = (aiHP < 50) ? heavyAttack : mediumAttack;
+                chosenAttack = (heavyAttack && aiHP < 50) ? heavyAttack : (mediumAttack || basicAttacks[0]);
             }
             // Rule 3: If Player HP is very low, use medium to be safe
             else if (playerHP <= 20) {
-                chosenAttack = mediumAttack;
+                chosenAttack = mediumAttack || basicAttacks[0];
             }
             // Rule 4: Otherwise, random choice, weighted towards medium.
             else {
                 const randomChoice = Math.random();
-                if (randomChoice < 0.4) { // 40% chance for medium
+                if (mediumAttack && randomChoice < 0.4) { // 40% chance for medium
                     chosenAttack = mediumAttack;
                 } else if (randomChoice < 0.7) { // 30% chance for basic 1
                     chosenAttack = basicAttacks[0];
                 } else { // 30% chance for basic 2
-                    chosenAttack = basicAttacks[1];
+                    chosenAttack = basicAttacks[1] || basicAttacks[0];
                 }
             }
+            
+            // Failsafe in case logic fails
+            if (!chosenAttack) {
+                chosenAttack = basicAttacks[Math.floor(Math.random() * basicAttacks.length)];
+            }
+
 
             // Find the index of the chosen attack to get its translated name
             const attackIndex = attacks.findIndex(a => a.name === chosenAttack.name);
@@ -1398,7 +1471,6 @@
         function animateAttack(imgElement, isPlayer) {
             const attackClass = isPlayer ? 'attacking' : 'ai-attacking';
             imgElement.classList.add(attackClass);
-            // FIX: Removed junk text that was here
             setTimeout(() => {
                 imgElement.classList.remove(attackClass);
             }, 200); // Duration of animation
@@ -1417,9 +1489,18 @@
 
         languageToggleButton.addEventListener('click', toggleLanguage);
 
+        // NEW: Handle video errors so the game doesn't hang
+        attackVideo.onerror = () => {
+            console.warn('Video file not found or failed to load. Skipping animation.');
+            // Manually trigger the onended logic to continue the game
+            if (typeof attackVideo.onended === 'function') {
+                attackVideo.onended(); 
+            }
+            videoOverlay.classList.add('hidden'); // Ensure overlay is hidden
+        };
+
         // --- START GAME ---
         document.addEventListener('DOMContentLoaded', initGame);
     </script>
 </body>
 </html>
-
