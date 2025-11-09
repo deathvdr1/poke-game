@@ -28,10 +28,10 @@
         }
         
         /* Ensure pixel font is used in buttons too */
-        body:lang(en) .retro-btn, body:lang(en) .battle-log, body:lang(en) .victory-text-base {
+        body:lang(en) .retro-btn, body:lang(en) .battle-log, body:lang(en) .victory-text-base, body:lang(en) .help-screen {
             font-family: 'Press Start 2P', sans-serif;
         }
-        body:lang(ja) .retro-btn, body:lang(ja) .battle-log, body:lang(ja) .victory-text-base {
+        body:lang(ja) .retro-btn, body:lang(ja) .battle-log, body:lang(ja) .victory-text-base, body:lang(ja) .help-screen {
             font-family: 'DotGothic16', sans-serif;
             /* Japanese font might need size adjustment */
             font-size: 1.1rem; 
@@ -46,7 +46,13 @@
             line-height: 1.2;
         }
         body:lang(en) .retro-btn.attack-btn {
+            /* MODIFIED: Made attack buttons full width */
             font-size: 0.5rem;
+            width: 100%;
+        }
+        /* MODIFIED: Make Japanese attack buttons full width too */
+        body:lang(ja) .retro-btn.attack-btn {
+            width: 100%;
         }
 
 
@@ -312,6 +318,47 @@
             padding: 0.5rem 0.75rem;
         }
 
+        /* --- NEW: Help Screen Styles --- */
+        .help-screen {
+            background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
+            color: #f0f0f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 2px solid #4a5568;
+            text-transform: none; /* Allow normal case for rules */
+        }
+        .help-screen h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #ffcc00; /* Yellow title */
+            text-shadow: 2px 2px #000;
+        }
+        .help-screen ul {
+            list-style-type: none;
+            padding: 0;
+            margin-left: 0.5rem;
+        }
+        .help-screen li {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+        /* Style the numbers/icons */
+        .help-screen li::before {
+            content: '▶';
+            color: #ffcc00;
+            margin-right: 0.75rem;
+            font-size: 0.75rem;
+        }
+        /* Special style for heavy attack rule */
+        .help-screen .heavy-rule {
+            color: #fca5a5; /* Light red */
+        }
+        .help-screen .heavy-rule::before {
+            content: '★';
+            color: #f87171; /* Red */
+        }
+
     </style>
 </head>
 <!-- Set default language for the body -->
@@ -325,19 +372,37 @@
 
     <h1 id="main-title" class="text-xl md:text-2xl font-normal text-center text-white mb-6" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">...</h1>
 
-    <div id="game-container" class="w-full max-w-4xl bg-[#f462bd]/80 backdrop-blur-sm rounded-xl shadow-2xl p-2 md:p-6 border-4 border-gray-700">
+    <!-- MODIFIED: Increased padding for height -->
+    <div id="game-container" class="w-full max-w-4xl bg-[#f462bd]/80 backdrop-blur-sm rounded-xl shadow-2xl p-4 md:p-8 border-4 border-gray-700">
 
         <!-- NEW START SCREEN -->
         <div id="start-screen" class="text-center">
-            <div class="flex flex-col items-center justify-center gap-6 p-8 md:p-16">
+            <div class="flex flex-col items-center justify-center gap-6 p-8 md:p-12">
                 <button id="play-ai-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #fa3df8; color: #fbbfff;">
                     ...
                 </button>
                 <button id="play-friend-btn" class="retro-btn maintenance-btn !text-base md:!text-xl !px-8 !py-4" data-maintenance-text="..." disabled>
                     ...
                 </button>
+                <!-- NEW: Help Button -->
+                <button id="help-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #fa3df8; color: #fbbfff;">
+                    <span class="mr-2">?</span>
+                    <span id="help-btn-text">...</span>
+                </button>
             </div>
         </div>
+
+        <!-- NEW: HELP SCREEN -->
+        <div id="help-screen" class="hidden help-screen">
+            <h2 id="help-title">...</h2>
+            <ul>
+                <li id="help-rule-1">...</li>
+                <li id="help-rule-2">...</li>
+                <li id="help-rule-3" class="heavy-rule">...</li>
+            </ul>
+            <button id="help-back-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #fa3df8; color: #fbbfff;">...</button>
+        </div>
+
 
         <div id="selection-screen" class="hidden">
             <div id="pokemon-slider-container" class="flex items-center justify-center gap-2 md:gap-6">
@@ -468,7 +533,13 @@
                 'defeat': 'DEFEAT...',
                 'draw': "IT'S A DRAW!",
                 'play_again': 'Play Again',
-                'end_game': 'End Game'
+                'end_game': 'End Game',
+                'help': 'Help',
+                'help_title': 'How to Play',
+                'help_rule_1': 'Basic Attacks deal 20 Damage.',
+                'help_rule_2': 'Medium Attacks deal 30 Damage.',
+                'help_rule_3': 'Heavy Attacks deal 50 Damage, but can ONLY be used when your criteria is fullfilled!',
+                'help_back': 'Back'
             },
             'ja': {
                 'title_battle': 'ポケモンバトル',
@@ -501,7 +572,14 @@
                 'defeat': 'はいぼく...', // Corrected
                 'draw': 'ひきわけ',
                 'play_again': 'もういっかい',
-                'end_game': 'おわる'
+                'end_game': 'おわる',
+                'help': 'ヘルプ',
+                'help_title': 'あそびかた',
+                'help_rule_1': '「じゃく」こうげきは 20ダメージ。',
+                'help_rule_2': '「ちゅう」こうげきは 30ダメージ。',
+                // FIX: Removed invalid newline character
+                'help_rule_3': '「きょう」こうげきは 50ダメージ。ただし、HPが 50いか のときだけ つかえる！',
+                'help_back': 'もどる'
             }
         };
 
@@ -554,21 +632,21 @@
             'en': [
                 { id: 1, name: 'Pika(re)', type: 'electric', image: 'https://placehold.co/150x150/FFEB3B/333?text=Pikachu', attacks: [
                     { name: 'Quick Attack', damage: 20 },
-                    { name: 'Thunder shock', damage: 20 },
-                    { name: 'Thunder bolt', damage: 30 },
+                    { name: 'Thundershock', damage: 20 },
+                    { name: 'Thunderbolt', damage: 30 },
                     { name: 'Volt Tackle', damage: 50, type: 'heavy' }
                 ]},
                 { id: 2, name: '(re)mander', type: 'fire', image: 'https://placehold.co/150x150/F44336/FFF?text=Charmander', attacks: [
                     { name: 'Scratch', damage: 20 },
                     { name: 'Ember', damage: 20 },
-                    { name: 'Flame thrower', damage: 30 },
+                    { name: 'Flamethrower', damage: 30 },
                     { name: 'Flare Blitz', damage: 50, type: 'heavy' }
                 ]},
                 { id: 3, name: 'Squi(re)tle', type: 'water', image: 'https://placehold.co/150x150/2196F3/FFF?text=Squirtle', attacks: [
                     { name: 'Tackle', damage: 20 },
-                    { name: 'Bubble', damage: 20 }, // <<< FIX WAS HERE
-                    { name: 'Water Gun', damage: 30 },
-                    { name: 'Hydro Pump', damage: 50, type: 'heavy' }
+                    { name: 'Bubble', damage: 20 },
+                    { name: 'Water Gun', damage: 40 },
+                    { name: 'Hydro Pump', damage: 60, type: 'heavy' }
                 ]},
                 { id: 4, name: 'Bulbasau(re)', type: 'grass', image: 'https://placehold.co/150x150/4CAF50/FFF?text=Bulbasaur', attacks: [
                     { name: 'Tackle', damage: 20 },
@@ -579,16 +657,16 @@
                 { id: 5, name: '(re)evee', type: 'normal', image: 'https://placehold.co/150x150/795548/FFF?text=Eevee', attacks: [
                     { name: 'Tackle', damage: 20 },
                     { name: 'Quick Attack', damage: 20 },
-                    { name: 'Swift', damage: 30 },
-                    { name: 'Last Resort', damage: 50, type: 'heavy' }
+                    { name: 'Swift', damage: 40 },
+                    { name: 'Last Resort', damage: 60, type: 'heavy' }
                 ]}
             ],
             'ja': [
                 { id: 1, name: 'ピカチュウ', type: 'electric', image: 'https://placehold.co/150x150/FFEB3B/333?text=Pikachu', attacks: [
                     { name: 'でんこうせっか', damage: 20 },
                     { name: 'でんきショック', damage: 20 },
-                    { name: '10まんボルト', damage: 40 },
-                    { name: 'ボルテッカー', damage: 60, type: 'heavy' }
+                    { name: '10まんボルト', damage: 30 },
+                    { name: 'ボルテッカー', damage: 50, type: 'heavy' }
                 ]},
                 { id: 2, name: 'ヒトカゲ', type: 'fire', image: 'https://placehold.co/150x150/F44336/FFF?text=Charmander', attacks: [
                     { name: 'ひっかく', damage: 20 },
@@ -606,12 +684,12 @@
                     { name: 'たいあたり', damage: 20 },
                     { name: 'つるのムチ', damage: 20 },
                     { name: 'はっぱカッター', damage: 30 },
-                    { name: 'ソーラービーム', damage: 60, type: 'heavy' }
+                    { name: 'ソーラービーム', damage: 50, type: 'heavy' }
                 ]},
                 { id: 5, name: 'イーブイ', type: 'normal', image: 'https://placehold.co/150x150/795548/FFF?text=Eevee', attacks: [
                     { name: 'たいあたり', damage: 20 },
                     { name: 'でんこうせっか', damage: 20 },
-                    { name: 'スピードスター', damage: 30 },
+                    { name: 'スピードスター', damage: 40 },
                     { name: 'とっておき', damage: 60, type: 'heavy' }
                 ]}
             ]
@@ -636,9 +714,17 @@
         const selectionScreen = document.getElementById('selection-screen');
         const battleScreen = document.getElementById('battle-screen');
         const victoryScreen = document.getElementById('victory-screen');
+        const helpScreen = document.getElementById('help-screen'); // NEW
         
         const playAiButton = document.getElementById('play-ai-btn');
         const playFriendButton = document.getElementById('play-friend-btn');
+        const helpButton = document.getElementById('help-btn'); // NEW
+        const helpButtonText = document.getElementById('help-btn-text'); // NEW
+        const helpTitle = document.getElementById('help-title'); // NEW
+        const helpRule1 = document.getElementById('help-rule-1'); // NEW
+        const helpRule2 = document.getElementById('help-rule-2'); // NEW
+        const helpRule3 = document.getElementById('help-rule-3'); // NEW
+        const helpBackButton = document.getElementById('help-back-btn'); // NEW
         
         const pokemonCardDisplay = document.getElementById('pokemon-card-display');
         const prevPokemonButton = document.getElementById('prev-pokemon');
@@ -703,6 +789,16 @@
                 playAiButton.textContent = getText('play_ai');
                 playFriendButton.textContent = getText('play_friend');
                 playFriendButton.dataset.maintenanceText = getText('maintenance');
+                helpButtonText.textContent = getText('help');
+            }
+
+            // Help Screen
+            if (!helpScreen.classList.contains('hidden')) {
+                helpTitle.textContent = getText('help_title');
+                helpRule1.textContent = getText('help_rule_1');
+                helpRule2.textContent = getText('help_rule_2');
+                helpRule3.textContent = getText('help_rule_3');
+                helpBackButton.textContent = getText('help_back');
             }
 
             // Selection Screen
@@ -768,8 +864,10 @@
             // Re-render battle log with new language
             if (!battleScreen.classList.contains('hidden')) {
                 logMessage(getText('log_battle_begin'), true); // Force-clear and update log
-            } else if (startScreen.classList.contains('hidden')) {
-                battleLogStart.textContent = getText('log_welcome');
+            } else if (startScreen.classList.contains('hidden') && selectionScreen.classList.contains('hidden') && helpScreen.classList.contains('hidden')) {
+                // Do nothing if on victory screen
+            } else if (helpScreen.classList.contains('hidden')) {
+                 battleLogStart.textContent = getText('log_welcome');
             }
         }
 
@@ -793,6 +891,7 @@
             selectionScreen.classList.add('hidden');
             battleScreen.classList.add('hidden');
             victoryScreen.classList.add('hidden'); 
+            helpScreen.classList.add('hidden'); // NEW
 
             // Hide end game button
             endGameButton.classList.add('hidden');
@@ -810,6 +909,7 @@
          */
         function showSelectionScreen() {
             startScreen.classList.add('hidden');
+            helpScreen.classList.add('hidden');
             selectionScreen.classList.remove('hidden');
             
             // This logic was in initGame, now it's here
@@ -821,6 +921,27 @@
             mainTitle.textContent = getText('title_choose');
             mainTitle.style.color = '#6d47fb';
         }
+
+        /**
+         * NEW: Shows the Help screen.
+         */
+        function showHelpScreen() {
+            startScreen.classList.add('hidden');
+            helpScreen.classList.remove('hidden');
+            mainTitle.classList.add('hidden'); // Hide title on help screen
+            updateAllText(); // Ensure help text is translated
+        }
+
+        /**
+         * NEW: Hides the Help screen and returns to start.
+         */
+        function hideHelpScreen() {
+            helpScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            mainTitle.classList.remove('hidden');
+            updateAllText(); // Update start screen text
+        }
+
 
         /**
         * Renders the *single* current Pokémon card for the slider.
@@ -944,7 +1065,8 @@
                 const baseAttack = playerPokemon.attacks[index]; // Get base data for type
                 const button = document.createElement('button');
                 button.textContent = attack.name;
-                button.className = `retro-btn !leading-tight !p-1 md:!p-3 attack-btn type-${playerPokemon.type}-btn`; 
+                // MODIFIED: Added w-full
+                button.className = `retro-btn !leading-tight !p-1 md:!p-3 attack-btn type-${playerPokemon.type}-btn w-full`; 
                 
                 if (baseAttack.type === 'heavy') {
                     button.id = 'heavy-attack-btn';
@@ -1287,6 +1409,8 @@
         restartButton.addEventListener('click', initGame);
         endGameButton.addEventListener('click', endGame);
         playAiButton.addEventListener('click', showSelectionScreen);
+        helpButton.addEventListener('click', showHelpScreen); // NEW
+        helpBackButton.addEventListener('click', hideHelpScreen); // NEW
 
         prevPokemonButton.addEventListener('click', showPrevPokemon);
         nextPokemonButton.addEventListener('click', showNextPokemon);
@@ -1298,4 +1422,3 @@
     </script>
 </body>
 </html>
-
