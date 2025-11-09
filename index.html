@@ -10,7 +10,7 @@
     <style>
         /* UPDATED: Added :lang() pseudo-classes to switch fonts */
         body:lang(en) {
-            font-family: 'Press+Start+2P', sans-serif;
+            font-family: 'Press Start 2P', sans-serif;
         }
         body:lang(ja) {
             /* Use DotGothic16 for Japanese, as Press Start 2P lacks glyphs */
@@ -28,10 +28,10 @@
         }
         
         /* Ensure pixel font is used in buttons too */
-        body:lang(en) .retro-btn, body:lang(en) .battle-log, body:lang(en) .victory-text {
+        body:lang(en) .retro-btn, body:lang(en) .battle-log, body:lang(en) .victory-text-base {
             font-family: 'Press Start 2P', sans-serif;
         }
-        body:lang(ja) .retro-btn, body:lang(ja) .battle-log, body:lang(ja) .victory-text {
+        body:lang(ja) .retro-btn, body:lang(ja) .battle-log, body:lang(ja) .victory-text-base {
             font-family: 'DotGothic16', sans-serif;
             /* Japanese font might need size adjustment */
             font-size: 1.1rem; 
@@ -137,24 +137,44 @@
         }
 
         /* --- Victory Overlay --- */
-        .victory-text {
+        .victory-text-base {
             font-weight: 400; /* This font only has one weight */
             font-size: 2.5rem; /* Smaller base size for pixel font */
-            color: white;
-            text-shadow: 
-                -3px -3px 0 #000,  
-                 3px -3px 0 #000,
-                -3px  3px 0 #000,
-                 3px  3px 0 #000,
-                -4px 0 0 #ffcc00,
-                 4px 0 0 #ffcc00,
-                 0 -4px 0 #ffcc00,
-                 0 4px 0 #ffcc00; /* Pokémon-style text shadow */
-            animation: bounce 1s ease-in-out infinite;
         }
 
+        /* Victory Animation */
+        .victory-text-win {
+            color: white;
+            text-shadow: 
+                -3px -3px 0 #000, 3px -3px 0 #000,
+                -3px 3px 0 #000, 3px 3px 0 #000,
+                -4px 0 0 #ffcc00, 4px 0 0 #ffcc00,
+                0 -4px 0 #ffcc00, 0 4px 0 #ffcc00;
+            animation: bounce 1s ease-in-out infinite;
+        }
+        
+        /* Defeat Animation */
+        .victory-text-lose {
+            color: #dc2626; /* Red */
+            text-shadow: 
+                -2px -2px 0 #000, 2px -2px 0 #000,
+                -2px 2px 0 #000, 2px 2px 0 #000,
+                -3px 0 0 #000, 3px 0 0 #000,
+                0 -3px 0 #000, 0 3px 0 #000;
+            animation: tremble 0.5s linear infinite;
+        }
+
+        /* Draw Style (No Animation) */
+        .victory-text-draw {
+            color: #a0aec0; /* Gray */
+            text-shadow: 
+                -2px -2px 0 #000, 2px -2px 0 #000,
+                -2px 2px 0 #000, 2px 2px 0 #000;
+        }
+
+
         @media (min-width: 768px) {
-            .victory-text {
+            .victory-text-base {
                 font-size: 5rem; /* Restore large size on desktop */
             }
         }
@@ -163,6 +183,15 @@
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-15px); }
         }
+
+        @keyframes tremble {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-2px, 2px); }
+            50% { transform: translate(2px, -2px); }
+            75% { transform: translate(-2px, 2px); }
+            100% { transform: translate(0, 0); }
+        }
+
 
         /* --- Pokémon Sprite Animations --- */
         .pokemon-sprite {
@@ -379,10 +408,12 @@
             <div class="relative w-64 h-64 md:w-80 md:h-80 mx-auto">
                 <img id="winner-img" src="https://placehold.co/320x320/EFEFEF/333?text=Winner" alt="Winner" class="w-full h-full object-cover rounded-full shadow-lg border-4 border-yellow-400">
                 <div class="absolute inset-0 flex items-center justify-center">
-                    <h1 id="victory-text" class="victory-text">...</h1>
+                    <!-- Base class added, animation class added by JS -->
+                    <h1 id="victory-text" class="victory-text-base">...</h1>
                 </div>
             </div>
-            <button id="restart-button" class="retro-btn bg-blue-600 mt-8 text-base md:text-xl px-8 py-4">...</button>
+            <!-- Updated button color -->
+            <button id="restart-button" class="retro-btn mt-8 text-base md:text-xl px-8 py-4" style="background-color: #610b9d;">...</button>
         </div>
     </div>
 
@@ -423,8 +454,8 @@
                 'log_draw': "It's a draw!",
                 'log_forfeit': 'You forfeited the match!',
                 'hp_text': (current, max) => `HP: ${current}/${max}`,
-                'victory': 'VICTORY',
-                'defeat': 'DEFEAT',
+                'victory': 'VICTORY!',
+                'defeat': 'DEFEAT...',
                 'draw': "IT'S A DRAW!",
                 'play_again': 'Play Again',
                 'end_game': 'End Game'
@@ -456,8 +487,8 @@
                 'log_draw': 'ひきわけ！',
                 'log_forfeit': 'しょうぶをあきらめた！',
                 'hp_text': (current, max) => `HP: ${current}/${max}`,
-                'victory': 'かった！',
-                'defeat': 'まけた...',
+                'victory': 'しょうり！', // Corrected
+                'defeat': 'はいぼく...', // Corrected
                 'draw': 'ひきわけ',
                 'play_again': 'もういっかい',
                 'end_game': 'おわる'
@@ -472,7 +503,18 @@
                 "the opponent's style was too intimidating!",
                 "it forgot what it was doing!",
                 "it decided to practice its dance moves instead.",
-                "it remembered a funny joke and paused."
+                "it remembered a funny joke and paused.",
+                // NEW Crypto Messages
+                "it tried to check its portfolio mid-attack!",
+                "it slipped on a dropped hardware wallet!",
+                "it stopped to explain 'what is blockchain?'",
+                "it got rug-pulled by its own feet!",
+                "it was too busy minting an NFT of the attack.",
+                "the gas fees for the attack were too high!",
+                "it shouted 'to the moon!' and jumped over the opponent.",
+                "it was trying to buy the dip... of its knees.",
+                "it's HODLing its power for later.",
+                "it got liquidated... from its balance."
             ],
             'ja': [
                 "こいしにつまずいた！",
@@ -481,7 +523,18 @@
                 "あいてのスタイルがすごすぎてこわい！",
                 "なにをしていたかわすれてしまった！",
                 "ダンスのれんしゅうをすることにした。",
-                "おもしろいジョークをおもいだしてとまった。"
+                "おもしろいジョークをおもいだしてとまった。",
+                // NEW Crypto Messages (Translated)
+                "こうげきのとちゅうにポートフォリオをかくにんしようとした！",
+                "ハードウェアウォレットがおちていて、すべってしまった！",
+                "「ブロックチェーンってなに？」とせつめいをはじめた！",
+                "じぶんのあしにラグプルされてしまった！",
+                "こうげきをNFTにミントするのにいそがしかった。",
+                "こうげきのガスだいがたかすぎた！",
+                "「月までとどけ！」とさけんで、あいてをとびこえた。",
+                "ディップ（ひざ）をかおうとしていた。",
+                "ちからを「ガチホ」することにした。",
+                "バランスをせいさんされてしまった。"
             ]
         };
 
@@ -489,31 +542,31 @@
         // REPLACE IMAGE URLS HERE WITH YOUR OWN
         const POKEMON_DATA = {
             'en': [
-                { id: 1, name: 'Pikachu', type: 'electric', image: 'https://placehold.co/150x150/FFEB3B/333?text=Pikachu', attacks: [
+                { id: 1, name: 'Pika(re)', type: 'electric', image: 'https://placehold.co/150x150/FFEB3B/333?text=Pikachu', attacks: [
                     { name: 'Quick Attack', damage: 20 },
                     { name: 'Thundershock', damage: 20 },
                     { name: 'Thunderbolt', damage: 40 },
                     { name: 'Volt Tackle', damage: 60, type: 'heavy' }
                 ]},
-                { id: 2, name: 'Charmander', type: 'fire', image: 'https://placehold.co/150x150/F44336/FFF?text=Charmander', attacks: [
+                { id: 2, name: '(re)mander', type: 'fire', image: 'https://placehold.co/150x150/F44336/FFF?text=Charmander', attacks: [
                     { name: 'Scratch', damage: 20 },
                     { name: 'Ember', damage: 20 },
                     { name: 'Flamethrower', damage: 40 },
                     { name: 'Flare Blitz', damage: 60, type: 'heavy' }
                 ]},
-                { id: 3, name: 'Squirtle', type: 'water', image: 'https://placehold.co/150x150/2196F3/FFF?text=Squirtle', attacks: [
+                { id: 3, name: 'Squi(re)tle', type: 'water', image: 'https://placehold.co/150x150/2196F3/FFF?text=Squirtle', attacks: [
                     { name: 'Tackle', damage: 20 },
-                    { name: 'Bubble', damage: 20 },
+                    { name: 'Bubble', damage: 20 }, // <<< FIX WAS HERE
                     { name: 'Water Gun', damage: 40 },
                     { name: 'Hydro Pump', damage: 60, type: 'heavy' }
                 ]},
-                { id: 4, name: 'Bulbasaur', type: 'grass', image: 'https://placehold.co/150x150/4CAF50/FFF?text=Bulbasaur', attacks: [
+                { id: 4, name: 'Bulbasau(re)', type: 'grass', image: 'https://placehold.co/150x150/4CAF50/FFF?text=Bulbasaur', attacks: [
                     { name: 'Tackle', damage: 20 },
                     { name: 'Vine Whip', damage: 20 },
                     { name: 'Razor Leaf', damage: 40 },
                     { name: 'Solar Beam', damage: 60, type: 'heavy' }
                 ]},
-                { id: 5, name: 'Eevee', type: 'normal', image: 'https://placehold.co/150x150/795548/FFF?text=Eevee', attacks: [
+                { id: 5, name: '(re)evee', type: 'normal', image: 'https://placehold.co/150x150/795548/FFF?text=Eevee', attacks: [
                     { name: 'Tackle', damage: 20 },
                     { name: 'Quick Attack', damage: 20 },
                     { name: 'Swift', damage: 40 },
@@ -535,7 +588,7 @@
                 ]},
                 { id: 3, name: 'ゼニガメ', type: 'water', image: 'https://placehold.co/150x150/2196F3/FFF?text=Squirtle', attacks: [
                     { name: 'たいあたり', damage: 20 },
-                    { name: 'あわ', damage: 20 },
+                    { name: 'あわ', damage: 20 }, // Corrected syntax
                     { name: 'みずでっぽう', damage: 40 },
                     { name: 'ハイドロポンプ', damage: 60, type: 'heavy' }
                 ]},
@@ -678,7 +731,17 @@
                 // The victoryText is set when the screen is shown, so it might need a re-call
                 // We'll store the last result to re-translate it
                 if (victoryScreen.dataset.result) {
-                    victoryText.textContent = getText(victoryScreen.dataset.result);
+                    const resultKey = victoryScreen.dataset.result;
+                    victoryText.textContent = getText(resultKey);
+                    // Re-apply correct animation class
+                    victoryText.className = 'victory-text-base'; // Reset
+                    if (resultKey === 'victory') {
+                        victoryText.classList.add('victory-text-win');
+                    } else if (resultKey === 'defeat') {
+                        victoryText.classList.add('victory-text-lose');
+                    } else {
+                        victoryText.classList.add('victory-text-draw');
+                    }
                 }
             }
 
@@ -1129,7 +1192,18 @@
                 winnerImg.src = 'https://placehold.co/320x320/EFEFEF/333?text=DRAW';
                 winnerImg.className = 'w-full h-full object-cover rounded-full shadow-lg border-8 border-gray-500';
             }
+            
+            // Set text and animation class
             victoryText.textContent = getText(messageKey);
+            victoryText.className = 'victory-text-base'; // Reset
+            if (messageKey === 'victory') {
+                victoryText.classList.add('victory-text-win');
+            } else if (messageKey === 'defeat') {
+                victoryText.classList.add('victory-text-lose');
+            } else {
+                victoryText.classList.add('victory-text-draw');
+            }
+
             restartButton.textContent = getText('play_again');
 
             // Animate transition
@@ -1192,6 +1266,7 @@
         function animateAttack(imgElement, isPlayer) {
             const attackClass = isPlayer ? 'attacking' : 'ai-attacking';
             imgElement.classList.add(attackClass);
+            // FIX: Removed junk text that was here
             setTimeout(() => {
                 imgElement.classList.remove(attackClass);
             }, 200); // Duration of animation
