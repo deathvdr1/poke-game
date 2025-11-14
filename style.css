@@ -1,0 +1,389 @@
+/* --- BASE & FONT STYLES --- */
+body {
+    /* Base styles from Tailwind */
+    background-color: #1a0b2e; /* Deep space purple */
+    color: #fbbfff; /* Light pink/magenta text */
+    font-family: 'DotGothic16', sans-serif;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    overflow: hidden; /* Hide scrollbars */
+    image-rendering: pixelated; /* Crispy images */
+}
+
+/* Use Press Start 2P for more "blocky" text, DotGothic16 for general */
+h1, h2, h3, .retro-btn, #turn-counter, #player-pokemon-name, #opponent-pokemon-name {
+    font-family: 'Press Start 2P', sans-serif;
+}
+
+/* Language-specific font rules */
+body[lang="ja"] {
+    font-family: 'DotGothic16', sans-serif;
+}
+body[lang="ja"] h1, 
+body[lang="ja"] h2, 
+body[lang="ja"] h3, 
+body[lang="ja"] .retro-btn, 
+body[lang="ja"] #turn-counter, 
+body[lang="ja"] #player-pokemon-name, 
+body[lang="ja"] #opponent-pokemon-name {
+    font-family: 'DotGothic16', sans-serif;
+    font-weight: 600; /* Bolder for Japanese */
+}
+
+
+/* --- STAR BACKGROUND --- */
+#star-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+/* REMOVED @function and $shadows variables */
+
+@keyframes animStar {
+    from { transform: translateY(0px); }
+    to { transform: translateY(-2000px); }
+}
+
+/* REPLACED with pure CSS box-shadows */
+#stars-small {
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    /* Added a few example shadows. A real implementation would have hundreds. */
+    box-shadow: 785px 1867px #FFF, 126px 1474px #FFF, 1756px 632px #FFF, 1238px 973px #FFF, 938px 902px #FFF, 1168px 1195px #FFF, 1102px 1739px #FFF, 62px 1417px #FFF, 1264px 1231px #FFF, 1205px 490px #FFF, 1044px 182px #FFF, 1024px 633px #FFF, 84px 389px #FFF, 1827px 1104px #FFF, 1188px 911px #FFF, 1983px 44px #FFF, 1143px 303px #FFF, 1311px 1913px #FFF, 422px 1358px #FFF, 1018px 1228px #FFF;
+    animation: animStar 50s linear infinite;
+}
+#stars-small:after {
+    content: " ";
+    position: absolute;
+    top: 2000px;
+    width: 1px;
+    height: 1px;
+    background: transparent;
+    box-shadow: 785px 1867px #FFF, 126px 1474px #FFF, 1756px 632px #FFF, 1238px 973px #FFF, 938px 902px #FFF, 1168px 1195px #FFF, 1102px 1739px #FFF, 62px 1417px #FFF, 1264px 1231px #FFF, 1205px 490px #FFF, 1044px 182px #FFF, 1024px 633px #FFF, 84px 389px #FFF, 1827px 1104px #FFF, 1188px 911px #FFF, 1983px 44px #FFF, 1143px 303px #FFF, 1311px 1913px #FFF, 422px 1358px #FFF, 1018px 1228px #FFF;
+}
+
+#stars-medium {
+    width: 2px;
+    height: 2px;
+    background: transparent;
+    box-shadow: 111px 1673px #FFF, 1421px 1588px #FFF, 1374px 1267px #FFF, 711px 133px #FFF, 1416px 1012px #FFF, 173px 1032px #FFF, 1139px 748px #FFF, 752px 1211px #FFF, 1206px 1005px #FFF, 1381px 1933px #FFF;
+    animation: animStar 100s linear infinite;
+}
+#stars-medium:after {
+    content: " ";
+    position: absolute;
+    top: 2000px;
+    width: 2px;
+    height: 2px;
+    background: transparent;
+    box-shadow: 111px 1673px #FFF, 1421px 1588px #FFF, 1374px 1267px #FFF, 711px 133px #FFF, 1416px 1012px #FFF, 173px 1032px #FFF, 1139px 748px #FFF, 752px 1211px #FFF, 1206px 1005px #FFF, 1381px 1933px #FFF;
+}
+
+#stars-large {
+    width: 3px;
+    height: 3px;
+    background: transparent;
+    box-shadow: 1221px 1324px #FFF, 1856px 1076px #FFF, 105px 1251px #FFF, 1815px 1018px #FFF, 1215px 1255px #FFF;
+    animation: animStar 150s linear infinite;
+}
+#stars-large:after {
+    content: " ";
+    position: absolute;
+    top: 2000px;
+    width: 3px;
+    height: 3px;
+    background: transparent;
+    box-shadow: 1221px 1324px #FFF, 1856px 1076px #FFF, 105px 1251px #FFF, 1815px 1018px #FFF, 1215px 1255px #FFF;
+}
+/* --- ROCKET --- */
+#moving-rocket {
+    position: fixed;
+    bottom: -150px; /* Start off-screen */
+    left: 10%;
+    width: 60px;
+    height: 90px;
+    z-index: 10;
+    image-rendering: pixelated;
+    animation: flyRocket 25s linear infinite;
+    transform: rotate(20deg);
+}
+
+@keyframes flyRocket {
+    0% {
+        bottom: -150px;
+        left: 10%;
+        opacity: 0.5;
+    }
+    20% {
+        opacity: 1;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        bottom: 110vh; /* End off-screen */
+        left: 90%;
+        opacity: 0.5;
+    }
+}
+
+/* --- LOGO --- */
+.pokeball-logo {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    z-index: 50;
+    animation: spin 8s linear infinite;
+    image-rendering: pixelated;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* --- BUTTONS & UI --- */
+.retro-btn {
+    font-family: 'Press Start 2P', sans-serif;
+    color: #fbbfff;
+    background-color: #fa3df8;
+    border: 2px solid #000;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    box-shadow: 4px 4px 0px #000;
+    transition: all 0.1s ease;
+    cursor: pointer;
+    image-rendering: pixelated;
+}
+.retro-btn:hover:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000;
+}
+.retro-btn:active:not(:disabled) {
+    transform: translate(4px, 4px);
+    box-shadow: 0px 0px 0px #000;
+}
+.retro-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #4a5568 !important; /* Tailwind gray-600 */
+    color: #a0aec0 !important; /* Tailwind gray-500 */
+    box-shadow: none;
+    transform: none;
+}
+
+/* Special Heavy Attack Button */
+.heavy-attack-disabled {
+    background-color: #6a0000 !important; /* Dark red */
+    color: #ff9d9d !important;
+    opacity: 0.6;
+}
+.heavy-attack-ready {
+    background-color: #ffcc00 !important;
+    color: #333 !important;
+    animation: pulse-yellow 1s infinite;
+}
+@keyframes pulse-yellow {
+    0% { box-shadow: 4px 4px 0px #000, 0 0 10px #ffcc00; }
+    50% { box-shadow: 4px 4px 0px #000, 0 0 20px #ffeb3b; }
+    100% { box-shadow: 4px 4px 0px #000, 0 0 10px #ffcc00; }
+}
+
+/* Language Toggle */
+#language-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 50;
+    background-color: #4a5568;
+    padding: 0.75rem;
+    font-size: 0.75rem;
+}
+
+/* --- LOBBY STYLES --- */
+.lobby-screen, .help-screen {
+    color: #fff;
+}
+.help-screen ul {
+    list-style-type: disc;
+    padding-left: 2rem;
+    margin: 1.5rem 0;
+}
+.help-screen li {
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+@media (min-width: 768px) {
+    .help-screen li {
+        font-size: 1rem;
+    }
+}
+.heavy-rule {
+    color: #ffcc00; /* Yellow */
+    font-weight: bold;
+}
+
+/* REVERTED: Removed .lobby-input and .username-prompt-container */
+/* Style for the text inputs in the lobby */
+.lobby-input {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 2px solid #fbbfff;
+    color: #ffffff;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-family: 'DotGothic16', sans-serif;
+    outline: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+.lobby-input:focus {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-color: #fa3df8;
+    box-shadow: 0 0 15px rgba(250, 61, 248, 0.5);
+}
+.lobby-input::placeholder {
+    color: #e0c8e0;
+}
+
+
+/* --- POKEMON SELECTION --- */
+.pokemon-card {
+    transition: all 0.2s ease;
+}
+.pokemon-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
+
+/* --- BATTLE & HP --- */
+.hp-bar-outer {
+    background-color: #333;
+    border-radius: 999px;
+    overflow: hidden;
+    padding: 2px;
+    border: 1px solid #111;
+}
+.hp-bar-inner {
+    height: 100%;
+    width: 100%;
+    border-radius: 999px;
+    /* Gradient for HP */
+    background-image: linear-gradient(to right, #f44336 0%, #ffeb3b 50%, #4caf50 100%);
+    background-size: 200% 100%;
+    background-position: 0% 50%; /* Start at 100% HP (green) */
+    transition: width 0.5s ease, background-position 0.5s ease;
+}
+
+.battle-log, .log-review-content {
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 1px solid #fbbfff;
+    color: #fff;
+    height: 120px;
+    overflow-y: auto;
+    font-family: 'DotGothic16', sans-serif;
+    line-height: 1.6;
+}
+.battle-log p, .log-review-content p {
+    padding: 2px 4px;
+    border-bottom: 1px dashed rgba(251, 191, 255, 0.2);
+}
+.battle-log p:last-child, .log-review-content p:last-child {
+    border-bottom: none;
+}
+@media (min-width: 768px) {
+    .battle-log, .log-review-content {
+        height: 140px;
+    }
+}
+.log-review-content {
+    height: 60vh;
+}
+
+/* --- VICTORY SCREEN --- */
+.victory-text-base {
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 2rem;
+    text-transform: uppercase;
+    text-shadow: 3px 3px 0px #000, 0 0 15px #fff;
+}
+@media (min-width: 768px) {
+    .victory-text-base {
+        font-size: 3rem;
+    }
+}
+.victory-text-win {
+    color: #ffeb3b; /* Yellow */
+}
+.victory-text-lose {
+    color: #f44336; /* Red */
+}
+.victory-text-draw {
+    color: #9e9e9e; /* Gray */
+}
+
+
+/* --- ANIMATIONS --- */
+.pokemon-sprite {
+    transition: transform 0.2s ease;
+}
+.attacking {
+    animation: attack-player 0.2s ease-out;
+}
+.opponent-attacking {
+    animation: attack-opponent 0.2s ease-out;
+}
+.taking-damage {
+    animation: take-damage 0.3s linear;
+}
+
+@keyframes attack-player {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(40px, -20px) scale(1.1); }
+    100% { transform: translate(0, 0); }
+}
+@keyframes attack-opponent {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(-40px, 20px) scale(1.1); }
+    100% { transform: translate(0, 0); }
+}
+@keyframes take-damage {
+    0% { opacity: 1; }
+    25% { opacity: 0.3; }
+    50% { opacity: 1; }
+    75% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+/* --- TYPE COLORS --- */
+/* Backgrounds */
+.type-electric-bg { background-color: #F7D02C !important; } /* FIX: Was #FFEB3B */
+.type-fire-bg { background-color: #F44336 !important; }
+.type-water-bg { background-color: #2196F3 !important; }
+.type-grass-bg { background-color: #4CAF50 !important; }
+.type-normal-bg { background-color: #A8A878 !important; }
+/* Text */
+.type-electric-text { color: #333 !important; }
+.type-fire-text { color: #fff !important; }
+.type-water-text { color: #fff !important; }
+.type-grass-text { color: #fff !important; }
+.type-normal-text { color: #fff !important; }
+/* Borders */
+.type-electric-border { border-color: #F7D02C !important; }
+.type-fire-border { border-color: #F08030 !important; }
+.type-water-border { border-color: #6890F0 !important; }
+.type-grass-border { border-color: #78C850 !important; }
+.type-normal-border { border-color: #A8A878 !important; }
+/* Buttons */
+.type-electric-btn { background-color: #F7D02C !important; color: #333 !important; }
+.type-fire-btn { background-color: #F08030 !important; color: #fff !important; }
+.type-water-btn { background-color: #6890F0 !important; color: #fff !important; }
+.type-grass-btn { background-color: #78C850 !important; color: #fff !important; }
+.type-normal-btn { background-color: #A8A878 !important; color: #fff !important; }
