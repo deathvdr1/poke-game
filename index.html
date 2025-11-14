@@ -4,478 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>(ré)Pokémon Battle</title>
+    <!-- Load Tailwind CSS CDN for utility classes -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- UPDATED: Added Japanese font -->
+    <!-- Link to external CSS file for custom styles and animations -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Load custom pixel fonts for retro look -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display.swap" rel="stylesheet">
-    <style>
-        /* UPDATED: Added :lang() pseudo-classes to switch fonts */
-        body:lang(en) {
-            font-family: 'Press Start 2P', sans-serif;
-        }
-        body:lang(ja) {
-            /* Use DotGothic16 for Japanese, as Press Start 2P lacks glyphs */
-            font-family: 'DotGothic16', sans-serif;
-        }
-
-        body {
-            background-color: #0c0a18; /* UPDATED: Dark space background */
-            /* UPDATED: Removed noise background for new starfield */
-            padding-bottom: 80px; /* Added space for the fixed button */
-            image-rendering: pixelated; /* Makes pixel fonts sharp */
-            text-transform: uppercase; /* Classic game feel */
-            font-size: 16px; /* Set a base font size for DotGothic16 */
-            overflow: hidden; /* NEW: Prevent stars/rocket from causing scrollbars */
-        }
-        
-        /* Ensure pixel font is used in buttons too */
-        body:lang(en) .retro-btn, body:lang(en) .battle-log, body:lang(en) .victory-text-base, body:lang(en) .help-screen {
-            font-family: 'Press Start 2P', sans-serif;
-        }
-        body:lang(ja) .retro-btn, body:lang(ja) .battle-log, body:lang(ja) .victory-text-base, body:lang(ja) .help-screen {
-            font-family: 'DotGothic16', sans-serif;
-            /* Japanese font might need size adjustment */
-            font-size: 1.1rem; 
-            line-height: 1.5;
-        }
-        /* Override for smaller elements */
-        body:lang(ja) h2, body:lang(ja) span, body:lang(ja) p {
-             font-size: 1.0rem;
-        }
-        body:lang(ja) .retro-btn.attack-btn {
-            font-size: 0.75rem; /* NEW: Made even smaller for mobile */
-            line-height: 1.2;
-        }
-        @media (min-width: 768px) {
-            body:lang(ja) .retro-btn.attack-btn {
-                font-size: 1.0rem; /* Restore original size for desktop */
-            }
-        }
-        body:lang(en) .retro-btn.attack-btn {
-            /* MODIFIED: Made attack buttons full width */
-            font-size: 0.55rem; /* NEW: Made even smaller for mobile */
-            width: 100%;
-        }
-        @media (min-width: 768px) {
-            body:lang(en) .retro-btn.attack-btn {
-                font-size: 0.75rem; /* Restore original size for desktop */
-            }
-        }
-        /* MODIFIED: Make Japanese attack buttons full width too */
-        body:lang(ja) .retro-btn.attack-btn {
-            width: 100%;
-        }
-
-
-        /* --- HP Bar Styling --- */
-        .hp-bar-outer {
-            background-color: #e0e0e0;
-            border-radius: 9999px;
-            overflow: hidden;
-            border: 2px solid #333;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .hp-bar-inner {
-            height: 100%;
-            border-radius: 9999px;
-            transition: width 0.5s ease-in-out;
-            /* Green to Yellow to Red gradient */
-            background: linear-gradient(90deg, #dc2626, #f59e0b, #22c55e);
-            background-size: 300% 100%; /* Size to show only one part */
-            background-position: 0% 50%; /* Start at green (right side) */
-        }
-
-        /* --- Retro Button Styling --- */
-        .retro-btn {
-            font-weight: 400; /* This font only has one weight */
-            background-color: #4a5568; /* Default gray */
-            color: white;
-            border: 2px solid #1a202c;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #1a202c; /* 3D effect */
-            transition: all 0.1s ease-in-out;
-            transform: translateY(0);
-        }
-
-        /* The user requested an orange highlight on click */
-        .retro-btn:active {
-            background-color: #dd6b20; /* Orange */
-            box-shadow: 0 2px 0 #1a202c;
-            transform: translateY(2px); /* Button press effect */
-        }
-
-        .retro-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.7;
-            background-color: #2d3748; /* Darker gray for disabled */
-            color: #718096;
-            box-shadow: 0 4px 0 #1a202c;
-        }
-
-        /* --- Heavy Attack Button States --- */
-        .heavy-attack-disabled {
-            background-color: #2d3748; /* Darker gray */
-            color: #718096;
-            box-shadow: 0 4px 0 #1a202c;
-            opacity: 0.6;
-            pointer-events: none; /* Not clickable */
-        }
-
-        .heavy-attack-ready {
-            background-color: #c53030; /* Ready state - red */
-            color: white;
-        }
-        .heavy-attack-ready:active {
-            background-color: #dd6b20; /* Still orange on click */
-        }
-
-        /* --- Battle Log --- */
-        .battle-log {
-            background-color: rgba(0, 0, 0, 0.7);
-            border: 2px solid #4a5568;
-            border-radius: 8px;
-            overflow-y: auto;
-            color: #f0f0f0;
-        }
-        .battle-log p {
-            padding: 4px 8px;
-            border-bottom: 1px dashed #4a5568;
-        }
-        .battle-log p:last-child {
-            border-bottom: none;
-        }
-
-        /* --- Screen Transitions --- */
-        .hidden {
-            display: none;
-        }
-
-        /* --- Victory Overlay --- */
-        .victory-text-base {
-            font-weight: 400; /* This font only has one weight */
-            font-size: 2.5rem; /* Smaller base size for pixel font */
-        }
-
-        /* Victory Animation */
-        .victory-text-win {
-            color: white;
-            text-shadow: 
-                -3px -3px 0 #000, 3px -3px 0 #000,
-                -3px 3px 0 #000, 3px 3px 0 #000,
-                -4px 0 0 #ffcc00, 4px 0 0 #ffcc00,
-                0 -4px 0 #ffcc00, 0 4px 0 #ffcc00;
-            animation: bounce 1s ease-in-out infinite;
-        }
-        
-        /* Defeat Animation */
-        .victory-text-lose {
-            color: #dc2626; /* Red */
-            text-shadow: 
-                -2px -2px 0 #000, 2px -2px 0 #000,
-                -2px 2px 0 #000, 2px 2px 0 #000,
-                -3px 0 0 #000, 3px 0 0 #000,
-                0 -3px 0 #000, 0 3px 0 #000;
-            animation: tremble 0.5s linear infinite;
-        }
-
-        /* Draw Style (No Animation) */
-        .victory-text-draw {
-            color: #a0aec0; /* Gray */
-            text-shadow: 
-                -2px -2px 0 #000, 2px -2px 0 #000,
-                -2px 2px 0 #000, 2px 2px 0 #000;
-        }
-
-
-        @media (min-width: 768px) {
-            .victory-text-base {
-                font-size: 5rem; /* Restore large size on desktop */
-            }
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-
-        @keyframes tremble {
-            0% { transform: translate(0, 0); }
-            25% { transform: translate(-2px, 2px); }
-            50% { transform: translate(2px, -2px); }
-            75% { transform: translate(-2px, 2px); }
-            100% { transform: translate(0, 0); }
-        }
-
-
-        /* --- Pokémon Sprite Animations --- */
-        .pokemon-sprite {
-            transition: transform 0.2s ease;
-            image-rendering: pixelated; /* Keeps placeholders sharp */
-        }
-        .pokemon-sprite.taking-damage {
-            animation: shake 0.3s ease-in-out;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-        .pokemon-sprite.attacking {
-            transform: scale(1.1) translateX(10px);
-        }
-        .pokemon-sprite.ai-attacking {
-            transform: scale(1.1) translateX(-10px);
-        }
-
-        /* --- Selection Card --- */
-        .pokemon-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .pokemon-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* --- Pokeball Logo --- */
-        .pokeball-logo {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            width: 50px;
-            height: 50px;
-            z-index: 100;
-            animation: spin 8s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* --- Maintenance Button --- */
-        .maintenance-btn {
-            position: relative;
-            overflow: hidden; /* To keep the bar inside */
-        }
-        .maintenance-btn::after {
-            content: attr(data-maintenance-text); /* Get text from data attribute */
-            position: absolute;
-            left: -100%;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: repeating-linear-gradient(
-                -45deg,
-                #ffcc00,
-                #ffcc00 10px,
-                #333 10px,
-                #333 20px
-            );
-            color: white;
-            text-shadow: 1px 1px 2px black;
-            font-size: 0.75em; /* Smaller text for the bar */
-            animation: maintenance-sweep 2s ease-in-out infinite;
-        }
-
-        @keyframes maintenance-sweep {
-            0% { left: -100%; }
-            40% { left: 0; }
-            60% { left: 0; }
-            100% { left: 100%; }
-        }
-
-        /* --- Pokémon Type Styles --- */
-        .type-electric-text { color: #F8D030; text-shadow: 1px 1px #A1871F; }
-        .type-electric-bg { background-color: rgba(248, 208, 48, 0.15); }
-        .type-electric-border { border-color: #F8D030; }
-        .type-electric-btn { background-color: #f7d02c; color: #333; }
-        .type-electric-btn:active { background-color: #dd6b20 !important; }
-
-        .type-fire-text { color: #F08030; text-shadow: 1px 1px #9C531F; }
-        .type-fire-bg { background-color: rgba(240, 128, 48, 0.15); }
-        .type-fire-border { border-color: #F08030; }
-        .type-fire-btn { background-color: #f08030; color: white; }
-        .type-fire-btn:active { background-color: #dd6b20 !important; }
-
-        .type-water-text { color: #6890F0; text-shadow: 1px 1px #445E9C; }
-        .type-water-bg { background-color: rgba(104, 144, 240, 0.15); }
-        .type-water-border { border-color: #6890F0; }
-        .type-water-btn { background-color: #6890f0; color: white; }
-        .type-water-btn:active { background-color: #dd6b20 !important; }
-
-        .type-grass-text { color: #78C850; text-shadow: 1px 1px #4E8234; }
-        .type-grass-bg { background-color: rgba(120, 200, 80, 0.15); }
-        .type-grass-border { border-color: #78C850; }
-        .type-grass-btn { background-color: #78c850; color: white; }
-        .type-grass-btn:active { background-color: #dd6b20 !important; }
-
-        .type-normal-text { color: #A8A878; text-shadow: 1px 1px #6D6D4E; }
-        .type-normal-bg { background-color: rgba(168, 168, 120, 0.15); }
-        .type-normal-border { border-color: #A8A878; }
-        .type-normal-btn { background-color: #a8a878; color: white; }
-        .type-normal-btn:active { background-color: #dd6b20 !important; }
-
-        /* --- Language Button --- */
-        #language-toggle {
-            position: fixed;
-            bottom: 16px;
-            right: 16px;
-            z-index: 100;
-            padding: 0.5rem 0.75rem;
-        }
-
-        /* --- NEW: Help Screen Styles --- */
-        .help-screen {
-            background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
-            color: #f0f0f0;
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 2px solid #4a5568;
-            text-transform: none; /* Allow normal case for rules */
-        }
-        .help-screen h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            color: #ffcc00; /* Yellow title */
-            text-shadow: 2px 2px #000;
-        }
-        .help-screen ul {
-            list-style-type: none;
-            padding: 0;
-            margin-left: 0.5rem;
-        }
-        .help-screen li {
-            margin-bottom: 0.75rem;
-            line-height: 1.6;
-            font-size: 0.9rem;
-        }
-        /* Style the numbers/icons */
-        .help-screen li::before {
-            content: '▶';
-            color: #ffcc00;
-            margin-right: 0.75rem;
-            font-size: 0.75rem;
-        }
-        /* Special style for heavy attack rule */
-        .help-screen .heavy-rule {
-            color: #fca5a5; /* Light red */
-        }
-        .help-screen .heavy-rule::before {
-            content: '★';
-            color: #f87171; /* Red */
-        }
-
-        /* --- NEW: Video Overlay --- */
-        #video-overlay {
-            z-index: 200; /* On top of everything */
-        }
-        /* NEW: Make log review overlay appear on top */
-        #log-review-overlay {
-            z-index: 210; /* On top of victory screen */
-        }
-        #attack-video {
-            border: 4px solid #ffcc00; /* Retro yellow border */
-            border-radius: 8px;
-            max-width: 90%;
-            max-height: 90%;
-            background-color: #000; /* Black bg in case video is letterboxed */
-        }
-
-        /* --- NEW: Starfield Background --- */
-        @keyframes move-stars-bg {
-            from { background-position: 0 0; }
-            to { background-position: 0 1000px; }
-        }
-
-        #star-background {
-            position: fixed;
-            inset: 0;
-            z-index: 0; /* Behind everything */
-            pointer-events: none; /* Not clickable */
-        }
-
-        #stars-small, #stars-medium, #stars-large {
-            position: absolute;
-            inset: 0;
-            animation: move-stars-bg linear infinite;
-        }
-
-        /* Small, fast-moving stars */
-        #stars-small {
-            background-image: 
-                radial-gradient(1px 1px at 20px 30px, #fff, transparent),
-                radial-gradient(1px 1px at 80px 120px, #fff, transparent),
-                radial-gradient(1px 1px at 150px 70px, #fff, transparent);
-            background-size: 200px 200px;
-            animation-duration: 50s;
-        }
-        
-        /* Medium, slower stars */
-        #stars-medium {
-            background-image: 
-                radial-gradient(2px 2px at 50px 100px, #eee, transparent),
-                radial-gradient(2px 2px at 200px 30px, #eee, transparent),
-                radial-gradient(2px 2px at 120px 180px, #eee, transparent);
-            background-size: 250px 250px;
-            animation-duration: 100s;
-            animation-direction: reverse; /* Move a different way */
-        }
-        
-        /* Large, very slow stars */
-        #stars-large {
-            background-image: 
-                radial-gradient(3px 3px at 70px 50px, #ddd, transparent),
-                radial-gradient(3px 3px at 180px 150px, #ddd, transparent);
-            background-size: 300px 300px;
-            animation-duration: 150s;
-        }
-
-        /* --- NEW: Moving Rocket --- */
-        #moving-rocket {
-            position: fixed;
-            width: 120px; /* UPDATED: Made 2x larger */
-            height: auto;
-            z-index: 10; /* UPDATED: Moves behind game container */
-            pointer-events: none; /* So it can't be clicked */
-            animation: rocket-path 30s linear infinite;
-            image-rendering: pixelated; /* Match theme */
-        }
-
-        @keyframes rocket-path {
-            0% {
-                top: -10%; /* Start off-screen */
-                left: 10%;
-                transform: rotate(45deg);
-            }
-            25% {
-                top: 40%;
-                left: 80%;
-                transform: rotate(135deg); /* Turn */
-            }
-            50% {
-                top: 110%; /* Go off-screen bottom */
-                left: 70%;
-                transform: rotate(225deg);
-            }
-            75% {
-                top: 50%;
-                left: -10%; /* Enter from left */
-                transform: rotate(315deg);
-            }
-            100% {
-                top: -10%; /* Return to start */
-                left: 10%;
-                transform: rotate(405deg); /* Complete the spin */
-            }
-        }
-
-    </style>
+    
 </head>
-<!-- Set default language for the body -->
+<!-- Set default language for the body, styles are applied via lang attribute in CSS -->
 <body lang="en" class="flex flex-col items-center justify-center min-h-screen p-4">
 
     <!-- NEW: Star Background -->
@@ -486,33 +23,37 @@
     </div>
 
     <!-- NEW: Moving Rocket -->
-    <img id="moving-rocket" 
-         src="./rocket.png" 
-         alt="Moving Rocket" 
-         onerror="this.src='https://placehold.co/60x90/ffffff/c0c0c0?text=ROCKET&font=press-start-2p'; this.style.imageRendering='pixelated'; this.onerror=null;">
+    <!-- FIX: Replaced placeholder with your local rocket.png -->
+    <img id="moving-rocket"
+         src="./rocket.png"
+         alt="Moving Rocket"
+         onerror="this.src='https://placehold.co/60x90/c0c0c0/c0c0c0?text=ERR'; this.style.imageRendering='pixelated'; this.onerror=null;"
+         style="image-rendering: pixelated;">
 
 
     <!-- Pokeball Logo -->
-    <img src="./lgo.png" 
-         alt="Pokeball" 
-         class="pokeball-logo" 
+    <!-- FIX: Replaced placeholder with your local lgo.png -->
+    <img src="./lgo.png"
+         alt="Pokeball"
+         class="pokeball-logo"
          onerror="this.src='https://placehold.co/50x50/f00/fff?text=O&font=montserrat'; this.onerror=null;">
 
     <h1 id="main-title" class="text-xl md:text-2xl font-normal text-center text-white mb-6" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">...</h1>
 
-    <!-- MODIFIED: Increased padding for height & added z-index -->
-    <div id="game-container" class="w-full max-w-4xl bg-[#f462bd]/80 backdrop-blur-sm rounded-xl shadow-2xl p-4 md:p-8 border-4 border-gray-700" style="position: relative; z-index: 20;">
+    <!-- Game Container -->
+    <!-- FIX: Changed opacity from /80 to /50 -->
+    <div id="game-container" class="w-full max-w-4xl bg-[#f462bd]/50 backdrop-blur-sm rounded-xl shadow-2xl p-4 md:p-8 border-4 border-gray-700" style="position: relative; z-index: 20;">
 
-        <!-- NEW START SCREEN -->
+        <!-- START SCREEN -->
         <div id="start-screen" class="text-center">
             <div class="flex flex-col items-center justify-center gap-6 p-8 md:p-12">
                 <button id="play-ai-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #fa3df8; color: #fbbfff;">
                     ...
                 </button>
-                <button id="play-friend-btn" class="retro-btn maintenance-btn !text-base md:!text-xl !px-8 !py-4" data-maintenance-text="..." disabled>
+                <!-- UPDATED: Removed disabled and maintenance text, added new style -->
+                <button id="play-friend-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #610b9d;">
                     ...
                 </button>
-                <!-- NEW: Help Button -->
                 <button id="help-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #fa3df8; color: #fbbfff;">
                     <span class="mr-2">?</span>
                     <span id="help-btn-text">...</span>
@@ -520,1177 +61,180 @@
             </div>
         </div>
 
-        <!-- NEW: HELP SCREEN -->
+        <!-- NEW: MULTIPLAYER LOBBY SCREEN -->
+        <div id="lobby-screen" class="hidden lobby-screen text-center">
+            <!-- Title will be changed by JS -->
+            <h2 id="lobby-title" class="text-lg md:text-xl">...</h2>
+            
+            <!-- REVERTED: Removed Username Prompt -->
+            
+            <!-- REVERTED: Container for lobby content (no longer hidden) -->
+            <div id="lobby-content-container">
+                <p class="my-4 text-xs md:text-sm">
+                    <span id="your-user-id-label">...</span>
+                    <!-- ADDED: This missing strong tag with the correct ID -->
+                    <strong id="player-user-id" class="text-yellow-300 break-all">...</strong>
+                </p>
+                
+                <!-- ADDED: All these missing elements -->
+                <button id="create-game-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4 w-full" style="background-color: #2c7a00; color: #fbbfff;">
+                    ...
+                </button>
+                <p id="lobby-or-divider" class="text-lg my-4">...</p>
+                <input type="text" id="game-id-input" placeholder="..." class="lobby-input w-full text-base md:text-xl">
+                <button id="join-game-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4 w-full mt-4" style="background-color: #610b9d; color: #fbbfff;">
+                    ...
+                </button>
+                
+                <!-- RE-ADDED ALL MISSING LOBBY MESSAGES -->
+                <p id="lobby-error-msg" class="text-red-400 text-sm mt-4 h-4"></p>
+                <p id="waiting-for-player-msg" class="text-yellow-300 text-base mt-4 hidden">...</p>
+                
+                <div id="game-id-display" class="mt-4 p-4 bg-black/30 rounded-lg border-2 border-gray-500 hidden">
+                    <span id="game-id-label" class="block text-sm text-gray-300">...</span>
+                    <strong id="game-id-text" class="text-2xl text-yellow-300 break-all">...</strong>
+                </div>
+
+                <button id="lobby-back-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4 mt-8 w-full" style="background-color: #b90000; color: #fbbfff;">...</button>
+            </div>
+        </div>
+
+
+        <!-- HELP SCREEN -->
         <div id="help-screen" class="hidden help-screen">
-            <h2 id="help-title">...</h2>
-            <ul>
+            <h2 id="help-title" class="text-lg md:text-xl text-center mb-4 md:mb-6">...</h2>
+            <ul class="text-sm md:text-base space-y-3">
                 <li id="help-rule-1">...</li>
                 <li id="help-rule-2">...</li>
                 <li id="help-rule-3" class="heavy-rule">...</li>
             </ul>
-            <button id="help-back-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #fa3df8; color: #fbbfff;">...</button>
+            <button id="help-back-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4 mt-8 w-full" style="background-color: #610b9d;">...</button>
         </div>
 
 
-        <div id="selection-screen" class="hidden">
-            <div id="pokemon-slider-container" class="flex items-center justify-center gap-2 md:gap-6">
-                <button id="prev-pokemon" class="retro-btn !p-2 md:!p-4 text-lg md:text-2xl">◀</button>
-                
-                <div id="pokemon-card-display" class="w-48 md:w-64">
-                    <!-- Card rendered by JS -->
+        <!-- POKÉMON SELECTION SCREEN -->
+        <div id="selection-screen" class="hidden text-center">
+            <h2 id="selection-title" class="text-lg md:text-xl text-center mb-4 md:mb-6">...</h2>
+            
+            <!-- Pokémon Card Slider -->
+            <div class="flex items-center justify-center gap-2 md:gap-4">
+                <button id="prev-pokemon" class="retro-btn !p-3 md:!p-4" style="background-color: #610b9d;">&lt;</button>
+                <div id="pokemon-card-display" class="flex-1 max-w-[250px] md:max-w-[300px]">
+                    <!-- JS will render card here -->
                 </div>
-                
-                <button id="next-pokemon" class="retro-btn !p-2 md:!p-4 text-lg md:text-2xl">▶</button>
+                <button id="next-pokemon" class="retro-btn !p-3 md:!p-4" style="background-color: #610b9d;">&gt;</button>
             </div>
+            
+            <p id="waiting-for-opponent-selection" class="text-yellow-300 text-base mt-6 hidden">...</p>
         </div>
 
-        <div id="battle-screen" class="hidden">
-            <div class="grid grid-cols-2 gap-1 md:gap-6 mb-1 md:mb-4">
 
+        <!-- BATTLE SCREEN -->
+        <div id="battle-screen" class="hidden">
+            <!-- Battle Info Bar -->
+            <div class="flex justify-between items-center mb-2 md:mb-4 px-2 py-1 bg-black/30 rounded border border-gray-600">
+                <h2 id="your-turn-title" class="text-sm md:text-lg font-bold text-yellow-300 animate-pulse">...</h2>
+                <span id="turn-counter" class="text-sm md:text-lg text-white">...</span>
+            </div>
+
+            <!-- Pokémon Boxes -->
+            <div class="grid grid-cols-2 gap-2 md:gap-4 mb-2 md:mb-4">
                 <!-- Player Box -->
                 <div id="player-box" class="p-1 md:p-4 rounded-lg border-2 border-gray-400 shadow-md">
-                    <!-- MODIFIED: Changed to flex-col and centered. Kept md:flex-row for larger screens -->
                     <div class="flex flex-col items-center gap-1 md:flex-row md:items-center md:gap-2">
-                        <!-- MODIFIED: Added mx-auto for mobile centering, md:mx-0 to reset -->
                         <img id="player-pokemon-img" src="https://placehold.co/150x150/EFEFEF/333?text=Player" alt="Player Pokémon" class="pokemon-sprite h-16 w-16 md:h-32 md:w-32 object-cover rounded mx-auto md:mx-0">
-                        <!-- MODIFIED: Changed to flex-1 and w-full for mobile, md:w-auto to reset -->
                         <div class="flex-1 w-full md:w-auto">
-                            <!-- MODIFIED: Added text-center for mobile, md:text-left to reset -->
-                            <h2 id="player-pokemon-name" class="text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left">...</h2>
-                            <!-- MODIFIED: Added block and text-center for mobile, md:text-left to reset -->
+                            <!-- NEW: Player 1/2 Title -->
+                            <h2 id="player-username" class="text-sm md:text-lg font-bold text-center md:text-left truncate">...</h2>
+                            <!-- REVERTED: Removed Player Username -->
+                            <h3 id="player-pokemon-name" class="text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left">...</h3>
                             <span id="player-hp-text" class="block text-[0.5rem] md:text-sm font-normal text-center md:text-left">HP: 100/100</span>
                             <div class="hp-bar-outer w-full h-4 md:h-5 mt-1 md:mt-2">
-                                <div id="player-hp-bar" class="hp-bar-inner h-full w-full"></div>
+                                <div id="player-hp-bar" class="hp-bar-inner h-full rounded-l-full"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- AI Box -->
-                <div id="ai-box" class="p-1 md:p-4 rounded-lg border-2 border-gray-400 shadow-md">
-                    <!-- MODIFIED: Changed to flex-col and centered. Kept md:flex-row for larger screens -->
+                
+                <!-- Opponent Box (was AI Box) -->
+                <!-- RENAMED all 'ai-' IDs to 'opponent-' -->
+                <div id="opponent-box" class="p-1 md:p-4 rounded-lg border-2 border-gray-400 shadow-md">
                     <div class="flex flex-col items-center gap-1 md:flex-row md:items-center md:gap-2">
-                        <!-- MODIFIED: Added mx-auto for mobile centering, md:mx-0 to reset -->
-                        <img id="ai-pokemon-img" src="https://placehold.co/150x150/EFEFEF/333?text=AI" alt="AI Pokémon" class="pokemon-sprite h-16 w-16 md:h-32 md:w-32 object-cover rounded mx-auto md:mx-0">
-                        <!-- MODIFIED: Changed to flex-1 and w-full for mobile, md:w-auto to reset -->
+                        <img id="opponent-pokemon-img" src="https://placehold.co/150x150/EFEFEF/333?text=Opponent" alt="Opponent Pokémon" class="pokemon-sprite h-16 w-16 md:h-32 md:w-32 object-cover rounded mx-auto md:mx-0">
                         <div class="flex-1 w-full md:w-auto">
-                            <!-- MODIFIED: Added text-center for mobile, md:text-left to reset -->
-                            <h2 id="ai-pokemon-name" class="text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left">...</h2>
-                            <!-- MODIFIED: Added block and text-center for mobile, md:text-left to reset -->
-                            <span id="ai-hp-text" class="block text-[0.5rem] md:text-sm font-normal text-center md:text-left">HP: 100/100</span>
+                            <!-- NEW: Player 1/2 Title -->
+                            <h2 id="opponent-username" class="text-sm md:text-lg font-bold text-center md:text-left truncate">...</h2>
+                            <!-- REVERTED: Removed Opponent Username -->
+                            <h3 id="opponent-pokemon-name" class="text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left">...</h3>
+                            <span id="opponent-hp-text" class="block text-[0.5rem] md:text-sm font-normal text-center md:text-left">HP: 100/100</span>
                             <div class="hp-bar-outer w-full h-4 md:h-5 mt-1 md:mt-2">
-                                <div id="ai-hp-bar" class="hp-bar-inner h-full w-full"></div>
+                                <div id="opponent-hp-bar" class="hp-bar-inner h-full rounded-l-full"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
 
-            <div class="grid grid-cols-2 gap-1 md:gap-6">
-                <div>
-                    <h3 id="your-turn-title" class="text-[0.625rem] md:text-base font-normal mb-2 text-center">...</h3>
-                    <div id="player-controls" class="grid grid-cols-2 gap-1 md:gap-3">
-                        <!-- Attack buttons rendered by JS -->
+            <!-- Controls and Log -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+                <!-- Player Controls -->
+                <div class="p-2 md:p-4 bg-black/30 rounded-lg border border-gray-600">
+                    <div id="player-controls" class="grid grid-cols-2 gap-2 md:gap-3">
+                        <!-- Attack buttons will be generated by JS -->
                     </div>
                 </div>
 
-                <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 id="battle-log-title" class="text-[0.625rem] md:text-base font-normal">...</h3>
-                        <span id="turn-counter" class="text-[0.5rem] md:text-sm font-normal">...</span>
-                    </div>
-                    <div id="battle-log" class="battle-log p-1 md:p-2 rounded-lg h-28 md:h-32 text-xs">
-                        <p id="battle-log-start"></p>
+                <!-- Battle Log -->
+                <div class="p-2 md:p-4 bg-black/30 rounded-lg border border-gray-600">
+                    <h3 id="battle-log-title" class="text-sm md:text-base font-bold text-center mb-2">...</h3>
+                    <div id="battle-log" class="battle-log text-[0.625rem] md:text-sm p-1 md:p-2 rounded">
+                        <p id="battle-log-start">...</p>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- VICTORY SCREEN -->
         <div id="victory-screen" class="hidden text-center">
             <div class="relative w-64 h-64 md:w-80 md:h-80 mx-auto">
                 <img id="winner-img" src="https://placehold.co/320x320/EFEFEF/333?text=Winner" alt="Winner" class="w-full h-full object-cover rounded-full shadow-lg border-4 border-yellow-400">
-                <div class="absolute inset-0 flex items-center justify-center">
-                    <!-- Base class added, animation class added by JS -->
+                <!-- UPDATED: Wrapper div for vertical centering -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <!-- REVERTED: Removed Winner Username -->
                     <h1 id="victory-text" class="victory-text-base">...</h1>
                 </div>
             </div>
-            <!-- Updated button color -->
             <button id="restart-button" class="retro-btn mt-8 text-base md:text-xl px-8 py-4" style="background-color: #610b9d;">...</button>
-            <!-- NEW: Show Log Button -->
-            <button id="show-log-button" class="retro-btn mt-4 text-base md:text-xl px-6 py-3" style="background-color: #4a5568;">...</button>
+            <button id="show-log-button" class="retro-btn mt-4 text-base md:text-xl px-8 py-4" style="background-color: #4a5568;">...</button>
         </div>
     </div>
-
-    <div class="fixed bottom-4 left-0 right-0 text-center z-50">
-        <button id="end-game-btn" class="retro-btn bg-red-700 px-8 hidden">...</button>
-    </div>
-
-    <!-- NEW: Language Toggle Button -->
-    <button id="language-toggle" class="retro-btn">EN / JA</button>
-
-    <!-- NEW: Video Attack Overlay -->
-    <div id="video-overlay" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center">
-        <!-- Added muted and playsinline for better autoplay compatibility -->
-        <video id="attack-video" width="480" height="360" muted playsinline>
-            <!-- No source initially, will be set by JS -->
-            Your browser does not support the video tag.
-        </video>
-    </div>
-
-    <!-- NEW: Log Review Overlay -->
-    <div id="log-review-overlay" class="hidden fixed inset-0 bg-black/90 p-4 flex items-center justify-center">
-        <div class="help-screen w-full max-w-2xl"> <!-- Re-using help-screen style -->
-            <h2 id="log-review-title" class="text-center">...</h2>
-            <!-- Re-using battle-log style for the container -->
-            <div id="log-review-content" class="battle-log h-64 md:h-80 text-xs my-4">
-                <!-- Log content will be copied here by JS -->
+    
+    <!-- End Game Button (outside container) -->
+    <button id="end-game-btn" class="retro-btn hidden mt-4 text-sm md:text-base px-6 py-3" style="background-color: #b90000; z-index: 20;">...</button>
+    
+    <!-- Language Toggle -->
+    <button id="language-toggle" class="retro-btn !p-3 !text-xs" style="position: fixed; bottom: 20px; right: 20px; z-index: 50; background-color: #4a5568;">
+        日本語
+    </button>
+    
+    <!-- FIX: REMOVED Video Overlay -->
+    
+    <!-- Log Review Overlay -->
+    <div id="log-review-overlay" class="hidden fixed inset-0 bg-black/90 p-4 z-[100] flex flex-col items-center justify-center">
+        <div class="w-full max-w-2xl bg-[#1a0b2e] p-4 md:p-6 rounded-lg border-2 border-gray-500">
+            <h2 id="log-review-title" class="text-lg md:text-xl text-center mb-4 md:mb-6">...</h2>
+            <div id="log-review-content" class="log-review-content text-xs md:text-sm p-2 md:p-4 rounded mb-4">
+                <!-- Final log content appears here -->
             </div>
-            <button id="close-log-button" class="retro-btn !text-base md:!text-xl !px-8 !py-4 w-full" style="background-color: #fa3df8; color: #fbbfff;">...</button>
+            <button id="close-log-button" class="retro-btn !text-base md:!text-xl !px-8 !py-4 w-full" style="background-color: #610b9d;">...</button>
         </div>
     </div>
 
-
-    <script>
-        // --- TRANSLATION DATA ---
-        const UI_TEXT = {
-            'en': {
-                'title_battle': 'Pokémon Battle',
-                'title_choose': 'Choose Your Pokémon!',
-                'play_ai': 'Play With AI',
-                'play_friend': 'Play With Friend',
-                'maintenance': 'Under Maintenance',
-                'your_turn': 'Your Turn!',
-                'battle_log': 'Battle Log',
-                'turn_counter': (current, max) => `Turn: ${current} / ${max}`,
-                'log_welcome': 'Welcome! Choose your Pokémon to begin.',
-                'log_player_chose': (name) => `You chose ${name}!`,
-                'log_ai_chose': (name) => `The AI chose ${name}!`,
-                'log_battle_begin': 'Let the battle begin!',
-                'log_player_command': (pokemon, attack) => `You commanded ${pokemon} to use ${attack}!`,
-                'log_miss': (reason) => `...but ${reason}`,
-                'log_hit': (attack, damage) => `${attack} hit! It dealt ${damage} damage.`,
-                'log_ai_attack': (pokemon, attack) => `The AI's ${pokemon} uses ${attack}!`,
-                'log_heavy_fail': (attack) => `You can't use ${attack} with more than 50 HP!`,
-                'log_ai_focus': (pokemon) => `The AI's ${pokemon} is focusing its power!`,
-                'log_ai_fainted': (pokemon) => `The AI's ${pokemon} fainted!`,
-                'log_player_fainted': (pokemon) => `Your ${pokemon} fainted!`,
-                'log_times_up': "The battle is over! Time's up!",
-                'log_player_hp_win': 'You have more HP! You win!',
-                'log_ai_hp_win': 'The AI has more HP! You lose.',
-                'log_draw': "It's a draw!",
-                'log_forfeit': 'You forfeited the match!',
-                'hp_text': (current, max) => `HP: ${current}/${max}`,
-                'victory': 'VICTORY!',
-                'defeat': 'DEFEAT...',
-                'draw': "IT'S A DRAW!",
-                'play_again': 'Play Again',
-                'end_game': 'End Game',
-                'help': 'Help',
-                'help_title': 'How to Play',
-                'help_rule_1': 'Basic Attacks deal 20 Damage.Medium Attacks deal 30 Damage.Heavy Attacks deal 50 Damage, but can ONLY be used when your criteria is fullfilled!',
-                'help_rule_2': 'Basic attacks 70% chance to hit, Medium 30% and heavy 90%',
-                'help_rule_3': 'Check battle logs for match analysis',
-                'help_back': 'Back',
-                'view_log': 'View Final Log', // NEW
-                'log_review_title': 'Final Battle Log' // NEW
-            },
-            'ja': {
-                'title_battle': 'ポケモンバトル',
-                'title_choose': 'ポケモンをえらんでね！',
-                'play_ai': 'AIとたいせん',
-                'play_friend': 'ともだちとたいせん',
-                'maintenance': 'メンテナンスちゅう',
-                'your_turn': 'あなたのターン！',
-                'battle_log': 'バトルログ',
-                'turn_counter': (current, max) => `ターン: ${current} / ${max}`,
-                'log_welcome': 'ようこそ！ポケモンをえらんでね。',
-                'log_player_chose': (name) => `あなたは ${name} をえらんだ！`,
-                'log_ai_chose': (name) => `AIは ${name} をえらんだ！`,
-                'log_battle_begin': 'バトルかいし！',
-                'log_player_command': (pokemon, attack) => `いけっ ${pokemon}！ ${attack}！`,
-                'log_miss': (reason) => `...しかし ${reason}`,
-                'log_hit': (attack, damage) => `${attack} があたった！ ${damage} のダメージ。`,
-                'log_ai_attack': (pokemon, attack) => `AIの ${pokemon} は ${attack} をつかった！`,
-                'log_heavy_fail': (attack) => `HPが50以上のときは ${attack} はつかえない！`,
-                'log_ai_focus': (pokemon) => `AIの ${pokemon} はちからをためている！`,
-                'log_ai_fainted': (pokemon) => `AIの ${pokemon} はたおれた！`,
-                'log_player_fainted': (pokemon) => `あなたの ${pokemon} はたおれた！`,
-                'log_times_up': 'バトルしゅうりょう！ じかんぎれ！',
-                'log_player_hp_win': 'あなたのHPがおおい！ あなたの勝ち！',
-                'log_ai_hp_win': 'AIのHPがおおい！ あなたのまけ。',
-                'log_draw': 'ひきわけ！',
-                'log_forfeit': 'しょうぶをあきらめた！',
-                'hp_text': (current, max) => `HP: ${current}/${max}`,
-                'victory': 'しょうり！', // Corrected
-                'defeat': 'はいぼく...', // Corrected
-                'draw': 'ひきわけ',
-                'play_again': 'もういっかい',
-                'end_game': 'おわる',
-                'help': 'ヘルプ',
-                'help_title': 'あそびかた',
-                'help_rule_1': '「じゃく」こうげきは 20ダメージ。',
-                'help_rule_2': '「ちゅう」こうげきは 30ダメージ。',
-                'help_rule_3': '「きょう」こうげきは 50ダメージ。ただし、HPが 50いか のときだけ つかえる！',
-                'help_back': 'もどる',
-                'view_log': 'さいしゅうログ', // NEW
-                'log_review_title': 'さいしゅうバトルログ' // NEW
-            }
-        };
-
-        // --- DELETED: Removed the first, outdated MISS_MESSAGES declaration ---
-
-        // --- NEW: Replaced MISS_MESSAGES with user's custom list ---
-        const MISS_MESSAGES = {
-            'en': [
-                "it's brain momentarily believed it was JMike the Pirate and went searching for buried treasure.",
-                "it got an alert from Discord about an urgent hype squad post. Priorities, people.",
-                "it was about to finish, but Chaz sent it a video of a cat singing opera.",
-                "it got an alert from Discord about an urgent hype squad post. Priorities, people.",
-                "A tiny voice whispered, What would JMike the Pirate steal next? and it had to ponder.",
-                "it suddenly realized it hadn't checked newbie-chat in a whole five minutes—a serious oversight.",
-                "it was in a focus flow, then Chaz dared it to poke the cat.",
-                "It fell into a trance RE made it forget everything that came before and after it.",
-                "It's monitor briefly turned into a treasure map, thanks, JMike the Pirate's influence.",
-                "it got a text from Chaz that was just a picture of a suspiciously smug cat.",
-                "it got a text from Chaz that Movie night was About to start.",
-                "It couldn't attack as it was mentally preparing a lecture from Joey the Professor on being a reinsurer.",
-                "It got a spontaneous flash of inspiration regarding a new hat design for Chely.",
-                "The gentle rhythm of it's work was interrupted when it heard Croket doing stand-up comedy in its head.",
-                "It got distracted by a sudden, urgent need to know what Chely's favorite type of cloud is.",
-                "It had to stop and mentally high-five Croket for being so impeccably blue.",
-                "It briefly forgot the task because I was trying to imitate the deep, thoughtful gaze of Croket the Frog.",
-                "It blames Chaz the thought of him riding a tiny unicycle was too powerful to ignore."
-            ],
-            'ja': [
-                "のうみそが いっしゅん じぶんを かいぞくJマイクだと おもいこみ、うまった たからを さがしにいった。",
-                "Discordから キンキュウの ハイプスクワッドの とうこうアラートが きた。ゆうせんじこうだ、みんな。",
-                "おわらせるところだったが、チャズから オペラをうたうネコの どうがが おくられてきた。",
-                "Discordから キンキュウの ハイプスクワッドの とうこうアラートが きた。ゆうせんじこうだ、みんな。",
-                "『かいぞくJマイクは つぎに なにを ぬすむだろう？』と ちいさなこえが ささやき、かんがえこんでしまった。",
-                "まるごふんかんも しんじんチャットを チェックしていないことに きづいてしまった。これは いちだいじだ。",
-                "しゅうちゅうモードだったのに、チャズに『ネコをつついてみろ』と そそのかされた。",
-                "REの トランスじょうたいに おちいり、すべての きおくを うしなった。",
-                "かいぞくJマイクの えいきょうで、モニターが いちじてきに たからのちずに なった。",
-                "チャズから、いぶかしげな ドヤがおのネコの しゃしんだけが おくられてきた。",
-                "チャズから『もうすぐ えいがのじかんだ』と メールが きた。",
-                "ジョーイきょうじゅから さいほけんについて レクチャーを うけるための こころのじゅんびを していて こうげきできなかった。",
-                "チェリーの あたらしい ぼうしのデザインにかんする とつぜんの ひらめきが...！",
-                "あたまのなかで クロケット・ザ・フロッグが スタンドアップコメディを はじめ、おだやかな しごとのリズムが みだされた。",
-                "チェリーの すきな くもの しゅるいを しらなければという、とつぜんの きんきゅうの しょうどうに かられた。",
-                "クロケット・ザ・フロッグの あまりにも かんぺきな みどりいろに、こころのなかで ハイタッチするしか なかった。",
-                "クロケット・ザ・フロッグの ふかく ものおもいに ふける まなざしを マネしようとして、タスクを わすれた。",
-                "チェリーのせいだ。かのじょが ちいさな いちりんしゃに のっている すがたを そうぞうしたら、むしできなかった。"
-            ]
-        };
-        // --- END of replaced messages ---
-
-
-        // --- DATA ---
-        // REPLACE IMAGE URLS HERE WITH YOUR OWN
-        const POKEMON_DATA = {
-            'en': [
-                { id: 1, name: 'Pika(re)', type: 'electric', image: './pokare.png', attacks: [
-                    { name: 'Quick Attack', damage: 20 },
-                    { name: 'Thunder Shock', damage: 20 }, /* UPDATED: Added space */
-                    { name: 'Thunder Bolt', damage: 30 }, /* UPDATED: Added space */
-                    { name: 'Volt Tackle', damage: 50, type: 'heavy' }
-                ]},
-                { id: 2, name: '(re)mander', type: 'fire', image: 'https://placehold.co/150x150/F44336/FFF?text=Charmander', attacks: [
-                    { name: 'Scratch', damage: 20 },
-                    { name: 'Ember', damage: 20 },
-                    { name: 'Flamethrower', damage: 30 },
-                    { name: 'Flare Blitz', damage: 50, type: 'heavy' }
-                ]},
-                { id: 3, name: 'Squi(re)tle', type: 'water', image: 'https://placehold.co/150x150/2196F3/FFF?text=Squirtle', attacks: [
-                    { name: 'Tackle', damage: 20 },
-                    { name: 'Bubble', damage: 20 },
-                    { name: 'Water Gun', damage: 40 },
-                    { name: 'Hydro Pump', damage: 60, type: 'heavy' }
-                ]},
-                { id: 4, name: 'Bulbasau(re)', type: 'grass', image: 'https://placehold.co/150x150/4CAF50/FFF?text=Bulbasaur', attacks: [
-                    { name: 'Tackle', damage: 20 },
-                    { name: 'Vine Whip', damage: 20 },
-                    { name: 'Razor Leaf', damage: 30 },
-                    { name: 'Solar Beam', damage: 50, type: 'heavy' }
-                ]},
-                { id: 5, name: '(re)evee', type: 'normal', image: 'https://placehold.co/150x150/795548/FFF?text=Eevee', attacks: [
-                    { name: 'Tackle', damage: 20 },
-                    { name: 'Quick Attack', damage: 20 },
-                    { name: 'Swift', damage: 40 },
-                    { name: 'Last Resort', damage: 60, type: 'heavy' }
-                ]}
-            ],
-            'ja': [
-                { id: 1, name: 'ピカチュウ', type: 'electric', image: 'https://placehold.co/150x150/FFEB3B/333?text=Pikachu', attacks: [
-                    { name: 'でんこうせっか', damage: 20 },
-                    { name: 'でんきショック', damage: 20 },
-                    { name: '10まんボルト', damage: 30 },
-                    { name: 'ボルテッカー', damage: 50, type: 'heavy' }
-                ]},
-                { id: 2, name: 'ヒトカゲ', type: 'fire', image: 'https://placehold.co/150x150/F44336/FFF?text=Charmander', attacks: [
-                    { name: 'ひっかく', damage: 20 },
-                    { name: 'ひのこ', damage: 20 },
-                    { name: 'かえんほうしゃ', damage: 30 },
-                    { name: 'フレアドライブ', damage: 50, type: 'heavy' }
-                ]},
-                { id: 3, name: 'ゼニガメ', type: 'water', image: 'https://placehold.co/150x150/2196F3/FFF?text=Squirtle', attacks: [
-                    { name: 'たいあたり', damage: 20 },
-                    { name: 'あわ', damage: 20 }, // Corrected syntax
-                    { name: 'みずでっぽう', damage: 30 },
-                    { name: 'ハイドロポンプ', damage: 50, type: 'heavy' }
-                ]},
-                { id: 4, name: 'フシギダネ', type: 'grass', image: 'https://placehold.co/150x150/4CAF50/FFF?text=Bulbasaur', attacks: [
-                    { name: 'たいあたり', damage: 20 },
-                    { name: 'つるのムチ', damage: 20 },
-                    { name: 'はっぱカッター', damage: 30 },
-                    { name: 'ソーラービーム', damage: 50, type: 'heavy' }
-                ]},
-                { id: 5, name: 'イーブイ', type: 'normal', image: 'https://placehold.co/150x150/795548/FFF?text=Eevee', attacks: [
-                    { name: 'たいあたり', damage: 20 },
-                    { name: 'でんこうせっか', damage: 20 },
-                    { name: 'スピードスター', damage: 40 },
-                    { name: 'とっておき', damage: 60, type: 'heavy' }
-                ]}
-            ]
-        };
-
-
-        // --- GAME STATE ---
-        let playerPokemon = null;
-        let aiPokemon = null;
-        let playerHP = 100;
-        let aiHP = 100;
-        let currentTurn = 1;
-        let isPlayerTurn = true;
-        let gameInProgress = false;
-        let currentSelectionIndex = 0;
-        let currentLanguage = 'en'; // NEW: Language state
-        const MAX_TURNS = 5;
-        const MISS_CHANCE = 0.5; // 20% miss chance
-
-        // --- DOM ELEMENTS ---
-        const startScreen = document.getElementById('start-screen');
-        const selectionScreen = document.getElementById('selection-screen');
-        const battleScreen = document.getElementById('battle-screen');
-        const victoryScreen = document.getElementById('victory-screen');
-        const helpScreen = document.getElementById('help-screen'); // NEW
-        
-        const playAiButton = document.getElementById('play-ai-btn');
-        const playFriendButton = document.getElementById('play-friend-btn');
-        const helpButton = document.getElementById('help-btn'); // NEW
-        const helpButtonText = document.getElementById('help-btn-text'); // NEW
-        const helpTitle = document.getElementById('help-title'); // NEW
-        const helpRule1 = document.getElementById('help-rule-1'); // NEW
-        const helpRule2 = document.getElementById('help-rule-2'); // NEW
-        const helpRule3 = document.getElementById('help-rule-3'); // NEW
-        const helpBackButton = document.getElementById('help-back-btn'); // NEW
-        
-        const pokemonCardDisplay = document.getElementById('pokemon-card-display');
-        const prevPokemonButton = document.getElementById('prev-pokemon');
-        const nextPokemonButton = document.getElementById('next-pokemon');
-
-        const playerBox = document.getElementById('player-box');
-        const aiBox = document.getElementById('ai-box');
-
-        const aiPokemonName = document.getElementById('ai-pokemon-name');
-        const aiHpText = document.getElementById('ai-hp-text');
-        const aiHpBar = document.getElementById('ai-hp-bar');
-        const aiPokemonImg = document.getElementById('ai-pokemon-img');
-
-        const playerPokemonName = document.getElementById('player-pokemon-name');
-        const playerHpText = document.getElementById('player-hp-text');
-        const playerHpBar = document.getElementById('player-hp-bar');
-        const playerPokemonImg = document.getElementById('player-pokemon-img');
-        
-        const battleLog = document.getElementById('battle-log');
-        const battleLogStart = document.getElementById('battle-log-start');
-        const turnCounter = document.getElementById('turn-counter');
-        const playerControls = document.getElementById('player-controls');
-        const yourTurnTitle = document.getElementById('your-turn-title');
-        const battleLogTitle = document.getElementById('battle-log-title');
-        
-        const endGameButton = document.getElementById('end-game-btn');
-        
-        const winnerImg = document.getElementById('winner-img');
-        const victoryText = document.getElementById('victory-text');
-        const restartButton = document.getElementById('restart-button');
-        const mainTitle = document.getElementById('main-title');
-        const languageToggleButton = document.getElementById('language-toggle');
-        // NEW: Video Elements
-        const videoOverlay = document.getElementById('video-overlay');
-        const attackVideo = document.getElementById('attack-video');
-
-        // NEW: Log Review Elements
-        const logReviewOverlay = document.getElementById('log-review-overlay');
-        const logReviewTitle = document.getElementById('log-review-title'); // <-- FIX: Added this line
-        const logReviewContent = document.getElementById('log-review-content');
-        const showLogButton = document.getElementById('show-log-button');
-        const closeLogButton = document.getElementById('close-log-button');
-
-        // --- FUNCTIONS ---
-
-        /**
-         * Gets a translated string from the UI_TEXT object.
-         * @param {string} key - The key for the text snippet.
-         * @param {...any} args - Optional arguments for dynamic text.
-         * @returns {string} The translated string.
-         */
-        function getText(key, ...args) {
-            const textOrFn = UI_TEXT[currentLanguage][key];
-            if (typeof textOrFn === 'function') {
-                return textOrFn(...args);
-            }
-            return textOrFn || key;
-        }
-
-        /**
-         * NEW: Updates all text elements on the screen to the current language.
-         */
-        function updateAllText() {
-            // Set body language attribute for CSS
-            document.body.lang = currentLanguage;
-
-            // Start Screen
-            if (!startScreen.classList.contains('hidden')) {
-                mainTitle.textContent = getText('title_battle');
-                mainTitle.style.color = '#6d47fb';
-                playAiButton.textContent = getText('play_ai');
-                playFriendButton.textContent = getText('play_friend');
-                playFriendButton.dataset.maintenanceText = getText('maintenance');
-                helpButtonText.textContent = getText('help');
-            }
-
-            // Help Screen
-            if (!helpScreen.classList.contains('hidden')) {
-                helpTitle.textContent = getText('help_title');
-                helpRule1.textContent = getText('help_rule_1');
-                helpRule2.textContent = getText('help_rule_2');
-                helpRule3.textContent = getText('help_rule_3');
-                helpBackButton.textContent = getText('help_back');
-            }
-
-            // Selection Screen
-            if (!selectionScreen.classList.contains('hidden')) {
-                mainTitle.textContent = getText('title_choose');
-                mainTitle.style.color = '#6d47fb';
-                renderCurrentPokemonCard(); // Re-render card for language change
-            }
-
-            // Battle Screen
-            if (!battleScreen.classList.contains('hidden')) {
-                yourTurnTitle.textContent = getText('your_turn');
-                battleLogTitle.textContent = getText('battle_log');
-                endGameButton.textContent = getText('end_game');
-                
-                // Update player/ai names and HP text
-                if (playerPokemon) {
-                    playerPokemonName.textContent = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).name;
-                    playerHpText.textContent = getText('hp_text', playerHP, 100);
-                    
-                    // Re-render buttons with new attack names
-                    createAttackButtons(); 
-                }
-                if (aiPokemon) {
-                    aiPokemonName.textContent = POKEMON_DATA[currentLanguage].find(p => p.id === aiPokemon.id).name;
-                    aiHpText.textContent = getText('hp_text', aiHP, 100);
-                }
-                
-                // Update turn counter
-                turnCounter.textContent = getText('turn_counter', Math.min(currentTurn, MAX_TURNS), MAX_TURNS);
-            }
-
-            // Victory Screen
-            if (!victoryScreen.classList.contains('hidden')) {
-                restartButton.textContent = getText('play_again');
-                // The victoryText is set when the screen is shown, so it might need a re-call
-                // We'll store the last result to re-translate it
-                if (victoryScreen.dataset.result) {
-                    const resultKey = victoryScreen.dataset.result;
-                    victoryText.textContent = getText(resultKey);
-                    // Re-apply correct animation class
-                    victoryText.className = 'victory-text-base'; // Reset
-                    if (resultKey === 'victory') {
-                        victoryText.classList.add('victory-text-win');
-                    } else if (resultKey === 'defeat') {
-                        victoryText.classList.add('victory-text-lose');
-                    } else {
-                        victoryText.classList.add('victory-text-draw');
-                    }
-                }
-                showLogButton.textContent = getText('view_log'); // NEW
-            }
-
-            // NEW: Log Review Screen
-            logReviewTitle.textContent = getText('log_review_title');
-            closeLogButton.textContent = getText('help_back'); // Re-using 'back' text
-
-            // Update button text
-            languageToggleButton.textContent = (currentLanguage === 'en') ? '日本語' : 'English';
-        }
-
-        /**
-         * NEW: Toggles the language and updates the UI.
-         */
-        function toggleLanguage() {
-            currentLanguage = (currentLanguage === 'en') ? 'ja' : 'en';
-            updateAllText();
-            // Re-render battle log with new language
-            if (!battleScreen.classList.contains('hidden')) {
-                logMessage(getText('log_battle_begin'), true); // Force-clear and update log
-            } else if (startScreen.classList.contains('hidden') && selectionScreen.classList.contains('hidden') && helpScreen.classList.contains('hidden')) {
-                // Do nothing if on victory screen
-            } else if (helpScreen.classList.contains('hidden')) {
-                 battleLogStart.textContent = getText('log_welcome');
-            }
-        }
-
-
-        /**
-        * Initializes the game, showing the start screen.
-        */
-        function initGame() {
-            // Reset state
-            playerPokemon = null;
-            aiPokemon = null;
-            playerHP = 100;
-            aiHP = 100;
-            currentTurn = 1;
-            isPlayerTurn = true;
-            gameInProgress = false;
-            currentSelectionIndex = 0;
-
-            // Show start screen
-            startScreen.classList.remove('hidden');
-            selectionScreen.classList.add('hidden');
-            battleScreen.classList.add('hidden');
-            victoryScreen.classList.add('hidden'); 
-            helpScreen.classList.add('hidden'); // NEW
-            logReviewOverlay.classList.add('hidden'); // NEW
-
-            // Hide end game button
-            endGameButton.classList.add('hidden');
-            
-            // Reset log
-            battleLog.innerHTML = `<p id="battle-log-start">${getText('log_welcome')}</p>`;
-            logReviewContent.innerHTML = ''; // NEW: Clear the review log
-            
-            // Update all text to current language
-            updateAllText();
-            updateUI(); // Resets HP bars etc.
-        }
-
-        /**
-         * NEW: Shows the Pokémon selection screen.
-         */
-        function showSelectionScreen() {
-            startScreen.classList.add('hidden');
-            helpScreen.classList.add('hidden');
-            selectionScreen.classList.remove('hidden');
-            
-            // This logic was in initGame, now it's here
-            currentSelectionIndex = 0; 
-            renderCurrentPokemonCard();
-            updateSliderButtons();
-            
-            // Update title
-            mainTitle.textContent = getText('title_choose');
-            mainTitle.style.color = '#6d47fb';
-        }
-
-        /**
-         * NEW: Shows the Help screen.
-         */
-        function showHelpScreen() {
-            startScreen.classList.add('hidden');
-            helpScreen.classList.remove('hidden');
-            mainTitle.classList.add('hidden'); // Hide title on help screen
-            updateAllText(); // Ensure help text is translated
-        }
-
-        /**
-         * NEW: Hides the Help screen and returns to start.
-         */
-        function hideHelpScreen() {
-            helpScreen.classList.add('hidden');
-            startScreen.classList.remove('hidden');
-            mainTitle.classList.remove('hidden');
-            updateAllText(); // Update start screen text
-        }
-
-
-        /**
-        * Renders the *single* current Pokémon card for the slider.
-        */
-        function renderCurrentPokemonCard() {
-            pokemonCardDisplay.innerHTML = ''; // Clear old card
-            
-            // Get pokemon data for the correct language
-            const pokemon = POKEMON_DATA[currentLanguage][currentSelectionIndex];
-            const basePokemon = POKEMON_DATA['en'][currentSelectionIndex]; // For image/type
-            
-            const card = document.createElement('div');
-            card.className = `pokemon-card bg-gray-200/70 p-2 md:p-4 rounded-lg border-2 border-gray-400 shadow-md text-center cursor-pointer w-full type-${basePokemon.type}-bg`;
-            card.innerHTML = `
-                <img src="${basePokemon.image}" alt="${pokemon.name}" class="w-24 h-24 md:w-48 md:h-48 rounded-full mx-auto mb-1 md:mb-2 border-2 md:border-4 border-gray-500">
-                <h3 class="text-sm md:text-lg font-normal mb-1 md:mb-2 truncate type-${basePokemon.type}-text">${pokemon.name}</h3>
-            `;
-            
-            card.addEventListener('click', () => selectPokemon(basePokemon.id));
-            pokemonCardDisplay.appendChild(card);
-        }
-
-        /**
-        * Shows the previous Pokémon in the slider.
-        */
-        function showPrevPokemon() {
-            if (currentSelectionIndex > 0) {
-                currentSelectionIndex--;
-                renderCurrentPokemonCard();
-                updateSliderButtons();
-            }
-        }
-
-        /**
-        * Shows the next Pokémon in the slider.
-        */
-        function showNextPokemon() {
-            if (currentSelectionIndex < POKEMON_DATA['en'].length - 1) {
-                currentSelectionIndex++;
-                renderCurrentPokemonCard();
-                updateSliderButtons();
-            }
-        }
-
-        /**
-        * Updates the disabled state of the slider buttons.
-        */
-        function updateSliderButtons() {
-            prevPokemonButton.disabled = (currentSelectionIndex === 0);
-            nextPokemonButton.disabled = (currentSelectionIndex === POKEMON_DATA['en'].length - 1);
-        }
-
-        /**
-        * Handles the player's Pokémon selection.
-        * @param {number} pokemonId - The ID of the chosen Pokémon.
-        */
-        function selectPokemon(pokemonId) {
-            // We use the 'en' data as the master list, language data is for display
-            playerPokemon = POKEMON_DATA['en'].find(p => p.id === pokemonId);
-            
-            // AI selects a different Pokémon
-            const aiChoices = POKEMON_DATA['en'].filter(p => p.id !== pokemonId);
-            aiPokemon = aiChoices[Math.floor(Math.random() * aiChoices.length)];
-
-            startBattle();
-        }
-
-        /**
-        * Sets up and starts the battle.
-        */
-        function startBattle() {
-            gameInProgress = true;
-            selectionScreen.classList.add('hidden');
-            battleScreen.classList.remove('hidden');
-            
-            // Hide the main title
-            mainTitle.classList.add('hidden');
-
-            // Show the end game button
-            endGameButton.textContent = getText('end_game');
-            endGameButton.classList.remove('hidden');
-
-            // Setup UI
-            const playerLangData = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id);
-            const aiLangData = POKEMON_DATA[currentLanguage].find(p => p.id === aiPokemon.id);
-            
-            playerPokemonName.textContent = playerLangData.name;
-            playerPokemonImg.src = playerPokemon.image;
-            playerPokemonName.className = `text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left type-${playerPokemon.type}-text`; // Added mobile text-center
-            playerBox.className = `p-1 md:p-4 rounded-lg border-2 shadow-md type-${playerPokemon.type}-bg type-${playerPokemon.type}-border`;
-            
-            aiPokemonName.textContent = aiLangData.name;
-            aiPokemonImg.src = aiPokemon.image;
-            aiPokemonName.className = `text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left type-${aiPokemon.type}-text`; // Added mobile text-center
-            aiBox.className = `p-1 md:p-4 rounded-lg border-2 shadow-md type-${aiPokemon.type}-bg type-${aiPokemon.type}-border`;
-
-            // Setup player attack buttons
-            createAttackButtons();
-
-            // Reset log
-            battleLog.innerHTML = '';
-            logMessage(getText('log_player_chose', playerLangData.name));
-            logMessage(getText('log_ai_chose', aiLangData.name));
-            logMessage(getText('log_battle_begin'));
-            
-            // Update all text fields
-            yourTurnTitle.textContent = getText('your_turn');
-            battleLogTitle.textContent = getText('battle_log');
-            
-            updateUI();
-        }
-
-        /**
-         * NEW: Creates and populates attack buttons.
-         */
-        function createAttackButtons() {
-            playerControls.innerHTML = '';
-            const playerLangData = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id);
-            
-            playerLangData.attacks.forEach((attack, index) => {
-                const baseAttack = playerPokemon.attacks[index]; // Get base data for type
-                const button = document.createElement('button');
-                button.textContent = attack.name;
-                // MODIFIED: Added w-full, and changed mobile padding from p-2 to px-2 pt-2 pb-3
-                button.className = `retro-btn !leading-tight !px-2 !pt-2 !pb-3 md:!p-4 attack-btn type-${playerPokemon.type}-btn w-full`; // UPDATED: !p-2 -> !px-2 !pt-2 !pb-3
-                
-                if (baseAttack.type === 'heavy') {
-                    button.id = 'heavy-attack-btn';
-                    button.classList.add('heavy-attack-disabled'); // Start disabled
-                    button.classList.remove(`type-${playerPokemon.type}-btn`); // Use default heavy styles
-                }
-                button.addEventListener('click', () => playerAttack(index));
-                playerControls.appendChild(button);
-            });
-        }
-
-        /**
-         * NEW: Generates a video file name from an attack name.
-         * e.g., "Volt Tackle" -> "./volt-tackle.mp4"
-         * @param {string} attackName - The English attack name.
-         * @returns {string} The formatted video file name.
-         */
-        function getAttackVideoSrc(attackName) {
-            // Assumes videos are in the same folder, named like 'quick-attack.mp4'
-            return './' + attackName.toLowerCase().replace(/\s+/g, '-') + '.mp4';
-        }
-
-
-        /**
-        * Handles the player's attack action.
-        * @param {number} attackIndex - The index of the attack in the Pokémon's attack array.
-        */
-        function playerAttack(attackIndex) {
-            if (!isPlayerTurn || !gameInProgress) return;
-
-            const attack = playerPokemon.attacks[attackIndex];
-            // Get both translated and base-English attack names
-            const attackName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).attacks[attackIndex].name;
-            const baseAttackName = POKEMON_DATA['en'].find(p => p.id === playerPokemon.id).attacks[attackIndex].name;
-            const pokemonName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).name;
-
-            // Check heavy attack rule
-            if (attack.type === 'heavy' && playerHP >= 50) {
-                logMessage(getText('log_heavy_fail', attackName));
-                return; // Don't waste the turn
-            }
-            
-            isPlayerTurn = false;
-            updateUI(); // Disable buttons immediately
-            logMessage(getText('log_player_command', pokemonName, attackName));
-            
-            // --- NEW VIDEO LOGIC ---
-            const videoSrc = getAttackVideoSrc(baseAttackName);
-            attackVideo.src = videoSrc;
-            attackVideo.muted = true; // Ensure muted for autoplay
-            // videoOverlay.classList.remove('hidden'); // <-- MOVED
-
-            // NEW: Listen for 'playing' event to unhide the overlay
-            const onPlaying = () => {
-                videoOverlay.classList.remove('hidden'); // Unhide *now*
-                attackVideo.removeEventListener('playing', onPlaying); // Clean up
-            };
-            attackVideo.addEventListener('playing', onPlaying);
-            
-            // The rest of the logic happens *after* the video plays (or fails)
-            attackVideo.onended = () => {
-                attackVideo.onended = null; // <-- FIX: Prevent double-fire
-                attackVideo.removeEventListener('playing', onPlaying); // <-- NEW: Clean up on success
-                videoOverlay.classList.add('hidden'); // Hide overlay
-                animateAttack(playerPokemonImg, true); // Play sprite wiggle
-
-                // Check for miss
-                const missReasons = MISS_MESSAGES[currentLanguage];
-                if (Math.random() < MISS_CHANCE) {
-                    logMessage(getText('log_miss', missReasons[Math.floor(Math.random() * missReasons.length)]));
-                } else {
-                    const damage = attack.damage;
-                    aiHP = Math.max(0, aiHP - damage);
-                    logMessage(getText('log_hit', attackName, damage));
-                    animateDamage(aiPokemonImg);
-                }
-                updateUI();
-                
-                // Check for AI KO
-                if (checkGameOver()) return;
-                
-                // AI's turn
-                setTimeout(aiTurn, 1500); // Wait 1.5s before AI attacks
-            };
-
-            attackVideo.play().catch(e => {
-                // Handle cases where play() is interrupted or fails
-                console.warn("Video play failed:", e);
-                attackVideo.removeEventListener('playing', onPlaying); // <-- NEW: Clean up on catch
-                // Manually trigger the onended logic to continue the game
-                if(attackVideo.onended) attackVideo.onended();
-            });
-            // --- END NEW VIDEO LOGIC ---
-        }
-
-        /**
-        * Simulates the AI's turn and logic.
-        */
-        function aiTurn() {
-            if (!gameInProgress) return;
-
-            const { attack, attackName, pokemonName } = getAiAttack();
-            
-            logMessage(getText('log_ai_attack', pokemonName, attackName));
-
-            // --- NEW VIDEO LOGIC ---
-            const videoSrc = getAttackVideoSrc(attack.name); // Use the English name from the object
-            attackVideo.src = videoSrc;
-            attackVideo.muted = true; // Ensure muted for autoplay
-            // videoOverlay.classList.remove('hidden'); // <-- MOVED
-
-            // NEW: Listen for 'playing' event to unhide the overlay
-            const onPlayingAI = () => {
-                videoOverlay.classList.remove('hidden'); // Unhide *now*
-                attackVideo.removeEventListener('playing', onPlayingAI); // Clean up
-            };
-            attackVideo.addEventListener('playing', onPlayingAI);
-
-            // The rest of the logic happens *after* the video plays
-            attackVideo.onended = () => {
-                attackVideo.onended = null; // <-- FIX: Prevent double-fire
-                attackVideo.removeEventListener('playing', onPlayingAI); // <-- NEW: Clean up on success
-                videoOverlay.classList.add('hidden'); // Hide overlay
-                animateAttack(aiPokemonImg, false); // Play sprite wiggle
-
-                // Check for miss
-                const missReasons = MISS_MESSAGES[currentLanguage];
-                if (Math.random() < MISS_CHANCE) {
-                    logMessage(getText('log_miss', missReasons[Math.floor(Math.random() * missReasons.length)]));
-                } else {
-                    const damage = attack.damage;
-                    playerHP = Math.max(0, playerHP - damage);
-                    logMessage(getText('log_hit', attackName, damage));
-                    animateDamage(playerPokemonImg);
-                }
-
-                currentTurn++; // Increment turn *after* both player and AI have gone
-                isPlayerTurn = true;
-                updateUI();
-                checkGameOver();
-            };
-
-            attackVideo.play().catch(e => {
-                // Handle cases where play() is interrupted or fails
-                console.warn("Video play failed:", e);
-                attackVideo.removeEventListener('playing', onPlayingAI); // <-- NEW: Clean up on catch
-                // Manually trigger the onended logic to continue the game
-                if(attackVideo.onended) attackVideo.onended();
-            });
-            // --- END NEW VIDEO LOGIC ---
-        }
-
-        /**
-        * "Smart" AI logic to select an attack.
-        * @returns {object} An object containing the chosen attack, its translated name, and the AI pokemon's translated name.
-        */
-        function getAiAttack() {
-            const attacks = aiPokemon.attacks;
-            const heavyAttack = attacks.find(a => a.type === 'heavy');
-            const mediumAttack = attacks.find(a => a.damage === 40 || a.damage === 30); // Broader search
-            const basicAttacks = attacks.filter(a => a.damage === 20);
-            
-            const aiLangData = POKEMON_DATA[currentLanguage].find(p => p.id === aiPokemon.id);
-            const pokemonName = aiLangData.name;
-            let chosenAttack = null;
-
-            // Rule 1: If AI HP < 50, high chance to use Heavy Attack.
-            if (heavyAttack && aiHP < 50 && Math.random() < 0.75) { // 75% chance
-                logMessage(getText('log_ai_focus', pokemonName));
-                chosenAttack = heavyAttack;
-            }
-            // Rule 2: If Player HP is low, try to finish.
-            else if (playerHP <= 40) {
-                // Use heavy if available, otherwise medium
-                chosenAttack = (heavyAttack && aiHP < 50) ? heavyAttack : (mediumAttack || basicAttacks[0]);
-            }
-            // Rule 3: If Player HP is very low, use medium to be safe
-            else if (playerHP <= 20) {
-                chosenAttack = mediumAttack || basicAttacks[0];
-            }
-            // Rule 4: Otherwise, random choice, weighted towards medium.
-            else {
-                const randomChoice = Math.random();
-                if (mediumAttack && randomChoice < 0.4) { // 40% chance for medium
-                    chosenAttack = mediumAttack;
-                } else if (randomChoice < 0.7) { // 30% chance for basic 1
-                    chosenAttack = basicAttacks[0];
-                } else { // 30% chance for basic 2
-                    chosenAttack = basicAttacks[1] || basicAttacks[0];
-                }
-            }
-            
-            // Failsafe in case logic fails
-            if (!chosenAttack) {
-                chosenAttack = basicAttacks[Math.floor(Math.random() * basicAttacks.length)];
-            }
-
-
-            // Find the index of the chosen attack to get its translated name
-            const attackIndex = attacks.findIndex(a => a.name === chosenAttack.name);
-            const attackName = aiLangData.attacks[attackIndex].name;
-            
-            return { attack: chosenAttack, attackName, pokemonName };
-        }
-
-        /**
-        * Checks if the game is over due to KO or turns running out.
-        * @returns {boolean} True if the game is over, false otherwise.
-        */
-        function checkGameOver() {
-            if (!gameInProgress) return true; // Game already ended
-
-            const playerLangName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).name;
-            const aiLangName = POKEMON_DATA[currentLanguage].find(p => p.id === aiPokemon.id).name;
-
-            if (aiHP <= 0) {
-                logMessage(getText('log_ai_fainted', aiLangName));
-                showVictoryScreen(playerPokemon, 'victory');
-                return true;
-            }
-            if (playerHP <= 0) {
-                logMessage(getText('log_player_fainted', playerLangName));
-                showVictoryScreen(aiPokemon, 'defeat');
-                return true;
-            }
-
-            if (currentTurn > MAX_TURNS) {
-                logMessage(getText('log_times_up'));
-                if (playerHP > aiHP) {
-                    logMessage(getText('log_player_hp_win'));
-                    showVictoryScreen(playerPokemon, 'victory');
-                } else if (aiHP > playerHP) {
-                    logMessage(getText('log_ai_hp_win'));
-                    showVictoryScreen(aiPokemon, 'defeat');
-                } else {
-                    logMessage(getText('log_draw'));
-                    showVictoryScreen(null, 'draw');
-                }
-                return true;
-            }
-            return false;
-        }
-
-        /**
-        * Updates all dynamic UI elements (HP bars, text, buttons).
-        */
-        function updateUI() {
-            // Update HP Text
-            playerHpText.textContent = getText('hp_text', playerHP, 100);
-            aiHpText.textContent = getText('hp_text', aiHP, 100);
-            
-            // Update HP bar color and width
-            updateHpBar(playerHpBar, playerHP);
-            updateHpBar(aiHpBar, aiHP);
-
-            // Update Turn Counter
-            turnCounter.textContent = getText('turn_counter', Math.min(currentTurn, MAX_TURNS), MAX_TURNS);
-
-            // Update Attack Buttons
-            const heavyBtn = document.getElementById('heavy-attack-btn');
-            if (heavyBtn) {
-                if (playerHP < 50) {
-                    heavyBtn.classList.remove('heavy-attack-disabled');
-                    heavyBtn.classList.add('heavy-attack-ready');
-                    heavyBtn.disabled = false;
-                } else {
-                    heavyBtn.classList.add('heavy-attack-disabled');
-                    heavyBtn.classList.remove('heavy-attack-ready');
-                    heavyBtn.disabled = true; // Also set disabled property
-                }
-            }
-
-            // Disable all buttons if not player's turn or game is over
-            playerControls.querySelectorAll('button').forEach(btn => {
-                if (btn.id !== 'heavy-attack-btn') { // Don't override heavy logic
-                    btn.disabled = !isPlayerTurn || !gameInProgress;
-                }
-                if (btn.id === 'heavy-attack-btn' && playerHP >= 50) {
-                    btn.disabled = true; // Ensure heavy stays disabled
-                }
-                if (!isPlayerTurn || !gameInProgress) {
-                    btn.disabled = true; // Master disable
-                }
-            });
-        }
-
-        /**
-        * Updates an HP bar's width and color based on percentage.
-        * @param {HTMLElement} barElement - The .hp-bar-inner element.
-        * @param {number} currentHp - The current HP value (0-100).
-        */
-        function updateHpBar(barElement, currentHp) {
-            const hpPercent = currentHp / 100;
-            barElement.style.width = `${currentHp}%`;
-            
-            // Update gradient position
-            // 100% HP = 0% position (all green)
-            // 50% HP = 50% position (all yellow)
-            // 0% HP = 100% position (all red)
-            const backgroundPosition = 100 - (hpPercent * 100);
-            barElement.style.backgroundPosition = `${backgroundPosition}% 50%`;
-        }
-
-
-        /**
-        * Displays the victory screen.
-        * @param {object | null} winner - The winning Pokémon object, or null for a draw.
-        * @param {string} messageKey - The key for the result text (victory, defeat, draw).
-        */
-        function showVictoryScreen(winner, messageKey) {
-            gameInProgress = false;
-
-            // NEW: Capture the final log *before* hiding the battle screen
-            logReviewContent.innerHTML = battleLog.innerHTML;
-            logReviewContent.scrollTop = logReviewContent.scrollHeight; // Scroll to bottom
-            
-            // Hide the end game button
-            endGameButton.classList.add('hidden');
-            
-            // Store the result key for re-translation
-            victoryScreen.dataset.result = messageKey;
-            
-            if (winner) {
-                winnerImg.src = winner.image.replace('150x150', '320x320'); // Get larger image
-                // Set type-specific border
-                winnerImg.className = `w-full h-full object-cover rounded-full shadow-lg border-8 type-${winner.type}-border`;
-            } else {
-                winnerImg.src = 'https://placehold.co/320x320/EFEFEF/333?text=DRAW';
-                winnerImg.className = 'w-full h-full object-cover rounded-full shadow-lg border-8 border-gray-500';
-            }
-            
-            // Set text and animation class
-            victoryText.textContent = getText(messageKey);
-            victoryText.className = 'victory-text-base'; // Reset
-            if (messageKey === 'victory') {
-                victoryText.classList.add('victory-text-win');
-            } else if (messageKey === 'defeat') {
-                victoryText.classList.add('victory-text-lose');
-            } else {
-                victoryText.classList.add('victory-text-draw');
-            }
-
-            restartButton.textContent = getText('play_again');
-            showLogButton.textContent = getText('view_log'); // NEW
-
-            // Animate transition
-            setTimeout(() => {
-                battleScreen.classList.add('hidden');
-                victoryScreen.classList.remove('hidden');
-
-                // Hide the main title on victory
-                mainTitle.classList.add('hidden');
-            }, 1000); // Wait 1 sec after final message
-        }
-
-        /**
-        * Adds a message to the battle log and scrolls down.
-        * @param {string} message - The text to log.
-        * @param {boolean} [forceClear=false] - If true, clears the log first.
-        */
-        function logMessage(message, forceClear = false) {
-            if (forceClear) {
-                battleLog.innerHTML = '';
-            }
-            const p = document.createElement('p');
-            p.textContent = message;
-            battleLog.appendChild(p);
-            battleLog.scrollTop = battleLog.scrollHeight; // Auto-scroll
-        }
-
-        /**
-        * Handles manually ending the game (forfeit).
-        */
-        function endGame() {
-            if (!gameInProgress) return; // Don't do anything if battle isn't running
-
-            gameInProgress = false;
-            logMessage(getText('log_forfeit'));
-            
-            // Show AI as winner
-            setTimeout(() => {
-                showVictoryScreen(aiPokemon, 'defeat');
-            }, 500); // Short delay for the message to be read
-            updateUI(); // Disable all buttons
-        }
-
-        /**
-        * Triggers a visual "damage" animation.
-        * @param {HTMLElement} imgElement - The <img> element to animate.
-        */
-        function animateDamage(imgElement) {
-            imgElement.classList.add('taking-damage');
-            setTimeout(() => {
-                imgElement.classList.remove('taking-damage');
-            }, 300); // Duration of animation
-        }
-
-        /**
-        * Triggers a visual "attack" animation.
-        * @param {HTMLElement} imgElement - The <img> element to animate.
-        * @param {boolean} isPlayer - True if player, false if AI (for direction).
-        */
-        function animateAttack(imgElement, isPlayer) {
-            const attackClass = isPlayer ? 'attacking' : 'ai-attacking';
-            imgElement.classList.add(attackClass);
-            setTimeout(() => {
-                imgElement.classList.remove(attackClass);
-            }, 200); // Duration of animation
-        }
-
-
-        // --- EVENT LISTENERS ---
-        restartButton.addEventListener('click', initGame);
-        endGameButton.addEventListener('click', endGame);
-        playAiButton.addEventListener('click', showSelectionScreen);
-        helpButton.addEventListener('click', showHelpScreen); // NEW
-        helpBackButton.addEventListener('click', hideHelpScreen); // NEW
-
-        prevPokemonButton.addEventListener('click', showPrevPokemon);
-        nextPokemonButton.addEventListener('click', showNextPokemon);
-
-        languageToggleButton.addEventListener('click', toggleLanguage);
-
-        // NEW: Log Review Listeners
-        showLogButton.addEventListener('click', () => {
-            logReviewOverlay.classList.remove('hidden');
-            // Ensure text is correct if language was toggled on victory screen
-            logReviewTitle.textContent = getText('log_review_title');
-            closeLogButton.textContent = getText('help_back');
-            logReviewContent.scrollTop = logReviewContent.scrollHeight; // Scroll to bottom
-        });
-        closeLogButton.addEventListener('click', () => {
-            logReviewOverlay.classList.add('hidden');
-        });
-
-
-        // NEW: Handle video errors so the game doesn't hang
-        attackVideo.onerror = () => {
-            console.warn('Video file not found or failed to load. Skipping animation.');
-            // Manually trigger the onended logic to continue the game
-            if (typeof attackVideo.onended === 'function') {
-                attackVideo.onended(); 
-            }
-            videoOverlay.classList.add('hidden'); // Ensure overlay is hidden
-        };
-
-        // --- START GAME ---
-        document.addEventListener('DOMContentLoaded', initGame);
-    </script>
+    <!-- NEW: Background Music -->
+    <!-- This audio element will be controlled by script.js -->
+    <audio id="bg-music" src="pokmusic.mp3" loop preload="auto"></audio>
+
+    <!-- Link to external JS file, 'type=module' is important for imports -->
+    <script src="script.js" type="module"></script>
 </body>
 </html>
