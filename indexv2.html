@@ -4,71 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STAY. WATCHING.</title>
-    <!-- Import the scary font --><link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
-    <!-- Import three.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
-    <!-- Firebase SDK Imports -->
     <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, setLogLevel, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- FIREBASE GLOBALS ---
-        let db, auth, appId, userId;
-        let isAuthReady = false;
-
-        // --- ASYNC FIREBASE INIT ---
-        async function initializeFirebase() {
-            try {
-                // DO NOT PROMPT FOR, OR CHANGE THESE.
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                
-                // Set log level for debugging
-                setLogLevel('Debug');
-
-                // Listen for auth state changes
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("User is signed in:", userId);
-                    } else {
-                        userId = null;
-                        console.log("User is signed out.");
-                    }
-                    isAuthReady = true;
-                    // Enable buttons that require auth
-                    hallOfReButton.disabled = false;
-                });
-
-                // Sign in
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-
-            } catch (error) {
-                console.error("Firebase Initialization Error:", error);
-                // Show error to user on overlay
-                const statusContent = document.getElementById('statusContent');
-                if(statusContent) {
-                    statusContent.innerHTML = `<p style="color:yellow;">Error: Could not connect to database. Leaderboard will be unavailable.</p>`;
-                }
-            }
-        }
-        
         // --- GAME SCRIPT ---
         // Expose game functions to the module global scope so HTML listeners can find them
         window.startGame = startGame;
-        window.showHallOfRe = showHallOfRe;
-        window.hideHallOfRe = hideHallOfRe;
 
         // --- SCENE SETUP ---
         let scene, camera, renderer, clock;
@@ -93,13 +35,11 @@
         const statusTitle = document.getElementById('statusTitle');
         const statusContent = document.getElementById('statusContent'); // Changed from statusMessage
         const startButton = document.getElementById('startButton');
-        const hallOfReButton = document.getElementById('hallOfReButton');
-        const hallOfReOverlay = document.getElementById('hallOfReOverlay');
-        const scoreList = document.getElementById('scoreList');
         const uiElement = document.getElementById('ui');
         const timerElement = document.getElementById('timer');
         const messageElement = document.getElementById('message');
         const crosshair = document.getElementById('crosshair');
+        let bgMusic; // For the background music
 
         // --- CONSTANTS ---
         const PLAYER_SPEED = 15.0;
@@ -108,8 +48,8 @@
         const PLAYER_SIZE = 1.0; // Player bounding box half-width
 
         function init() {
-            // Start Firebase Auth
-            initializeFirebase();
+            // Get audio element
+            bgMusic = document.getElementById('bgMusic');
 
             // Scene
             scene = new THREE.Scene();
@@ -162,9 +102,6 @@
             document.addEventListener('keyup', (e) => keys[e.code] = false);
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('pointerlockchange', onPointerLockChange);
-            
-            // Set initial button states
-            hallOfReButton.disabled = true; // Disabled until auth is ready
         }
 
         function createEnvironment() {
@@ -321,6 +258,11 @@
 
             // Request pointer lock
             document.body.requestPointerLock();
+
+            // Play music
+            if (bgMusic) {
+                bgMusic.play();
+            }
             
             // Start game loop
             animate();
@@ -474,26 +416,21 @@
             if (gameState !== 'playing') return;
             gameState = didWin ? "won" : "lost";
             
+            // Stop and reset music
+            if (bgMusic) {
+                bgMusic.pause();
+                bgMusic.currentTime = 0;
+            }
+
             overlay.style.display = 'flex';
             uiElement.style.display = 'none';
             crosshair.style.display = 'none';
             
-            // Always show Hall of RE button on game end
-            hallOfReButton.style.display = 'inline-block';
-            
             if (didWin) {
                 statusTitle.textContent = "YOU SURVIVED... FOR NOW";
-                // Show input field and save button
-                statusContent.innerHTML = `
-                    <p>Enter your name to enter the "Hall of RE"</p>
-                    <input type="text" id="playerNameInput" placeholder="SURVIVOR NAME">
-                    <button id="saveScoreButton" class="overlayButton">SAVE</button>
-                `;
-                // Hide main game buttons
-                startButton.style.display = 'none';
-                hallOfReButton.style.display = 'none';
-                
-                document.getElementById('saveScoreButton').addEventListener('click', saveScore);
+                statusContent.innerHTML = `<p>You made it out. But for how long?</p>`;
+                startButton.style.display = 'inline-block';
+                startButton.textContent = "PLAY AGAIN?";
             } else {
                 statusTitle.textContent = "YOU WERE CAUGHT";
                 statusContent.innerHTML = `<p>${customMessage || "It found you in the dark."}</p>`;
@@ -503,84 +440,6 @@
             }
             
             document.exitPointerLock();
-        }
-
-        async function saveScore() {
-            if (!isAuthReady || !userId) {
-                statusContent.innerHTML = `<p style="color:yellow;">Error: Not connected to server. Cannot save score.</p>`;
-                return;
-            }
-            
-            const input = document.getElementById('playerNameInput');
-            const button = document.getElementById('saveScoreButton');
-            const playerName = input.value.trim() || "Anonymous Survivor";
-            
-            button.disabled = true;
-            button.textContent = "SAVING...";
-
-            try {
-                const hallOfReRef = collection(db, 'artifacts', appId, 'public', 'data', 'hall-of-re');
-                await addDoc(hallOfReRef, { 
-                    name: playerName, 
-                    time: 300, 
-                    timestamp: new Date().toISOString() 
-                });
-                
-                statusTitle.textContent = "SCORE SAVED";
-                statusContent.innerHTML = `<p>Your victory has been recorded, ${playerName}.</p>`;
-
-            } catch (error) {
-                console.error("Error saving score:", error);
-                statusContent.innerHTML = `<p style="color:yellow;">Error: Could not save score. Please try again.</p>`;
-            } finally {
-                // Show main buttons again
-                startButton.style.display = 'inline-block';
-                startButton.textContent = "PLAY AGAIN?";
-                hallOfReButton.style.display = 'inline-block';
-            }
-        }
-
-        async function showHallOfRe() {
-            if (!isAuthReady) {
-                alert("Connecting to leaderboard... Please try again in a moment.");
-                return;
-            }
-            
-            overlay.style.display = 'none';
-            hallOfReOverlay.style.display = 'flex';
-            scoreList.innerHTML = '<li>Loading...</li>';
-            
-            try {
-                const hallOfReRef = collection(db, 'artifacts', appId, 'public', 'data', 'hall-of-re');
-                const querySnapshot = await getDocs(hallOfReRef);
-                
-                const scores = [];
-                querySnapshot.forEach((doc) => {
-                    scores.push(doc.data());
-                });
-                
-                // Sort scores by date, newest first (no orderBy in query)
-                scores.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                
-                scoreList.innerHTML = ''; // Clear loading
-                if (scores.length === 0) {
-                    scoreList.innerHTML = '<li>No one has survived yet...</li>';
-                } else {
-                    scores.forEach(score => {
-                        const li = document.createElement('li');
-                        li.textContent = `${score.name} - Survived 5:00 (${new Date(score.timestamp).toLocaleDateString()})`;
-                        scoreList.appendChild(li);
-                    });
-                }
-            } catch (error) {
-                console.error("Error loading Hall of RE:", error);
-                scoreList.innerHTML = '<li>Error loading scores.</li>';
-            }
-        }
-
-        function hideHallOfRe() {
-            hallOfReOverlay.style.display = 'none';
-            overlay.style.display = 'flex';
         }
 
         // --- START THE APP ---
@@ -656,7 +515,7 @@
             display: flex; /* Starts visible */
         }
 
-        #overlay h1, #hallOfReOverlay h1 {
+        #overlay h1 {
             font-size: 6em;
             margin: 0 0 20px 0;
             color: #ff0000;
@@ -694,47 +553,6 @@
 
         /* Specific buttons */
         #startButton { /* Re-using .overlayButton style */ }
-        #hallOfReButton { /* Re-using .overlayButton style */ }
-
-        /* Hall of RE Overlay */
-        #hallOfReOverlay {
-            display: none; /* Starts hidden */
-            justify-content: flex-start; /* Align to top */
-            padding-top: 5vh;
-        }
-
-        #scoreList {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
-            font-size: 1.5em;
-            color: #ff9999;
-            max-height: 70vh;
-            overflow-y: auto;
-            width: 100%;
-            max-width: 700px;
-        }
-        #scoreList li {
-            padding: 5px;
-            border-bottom: 1px dashed #600;
-        }
-
-        /* Player Name Input */
-        #playerNameInput {
-            font-family: 'Creepster', cursive;
-            font-size: 1.5em;
-            padding: 10px;
-            width: 80%;
-            max-width: 400px;
-            background: #300;
-            border: 2px solid #ff0000;
-            color: #ffaaaa;
-            border-radius: 5px;
-            text-align: center;
-        }
-        #playerNameInput::placeholder {
-            color: #995555;
-        }
 
         canvas {
             display: block;
@@ -742,41 +560,32 @@
     </style>
 </head>
 <body>
-    <!-- Game Over/Start Screen -->
     <div id="overlay" class="overlayBase">
-        <h1 id="statusTitle">STAY. WATCHING.</h1>
+        <h1 id="statusTitle">Redacted's nightmare.</h1>
         <div id="statusContent">
             <p>
-                You are trapped in an abandoned factory. A creature hunts you.
+                You are trapped in an abandoned factory. (re)dacted hunts you.
                 <br><br>
                 It only moves when you are not looking directly at it.
                 <br><br>
                 Survive for 5 minutes.
+                <br><br>
+                i will pray to god that you survive
             </p>
         </div>
         <div>
             <button id="startButton" class="overlayButton" onclick="startGame()">BEGIN</button>
-            <button id="hallOfReButton" class="overlayButton" onclick="showHallOfRe()">HALL OF RE</button>
-        </div>
+            </div>
     </div>
 
-    <!-- Hall of RE Screen -->
-    <div id="hallOfReOverlay" class="overlayBase">
-        <h1>HALL OF RE</h1>
-        <ul id="scoreList">
-            <!-- Scores will be loaded here -->
-        </ul>
-        <button id="hallOfReBackButton" class="overlayButton" onclick="hideHallOfRe()">BACK</button>
-    </div>
-
-    <!-- In-Game UI -->
     <div id="ui" style="display: none;">
         <div id="timer">5:00</div>
         <div id="message">Don't look away...</div>
     </div>
 
-    <!-- Center crosshair -->
     <div id="crosshair" style="display: none;"></div>
+
+    <audio id="bgMusic" loop src="./crpmusic.mp3"></audio>
 
 </body>
 </html>
