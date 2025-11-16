@@ -53,8 +53,8 @@
         const PLAYER_SIZE = 1.0; // Player bounding box half-width
 
         function init() {
-            // Check for mobile
-            isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+            // Check for mobile -- THIS IS THE UPDATED LINE
+            isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
             // Get audio element
             bgMusic = document.getElementById('bgMusic');
