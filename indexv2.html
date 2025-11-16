@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>STAY. WATCHING.</title>
     <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -29,6 +29,11 @@
         let keys = {}; // To track key presses
         let cameraRotation = new THREE.Euler(0, 0, 0, 'YXZ');
         let raycaster = new THREE.Raycaster();
+        let isMobile = false; // Will be set on init
+
+        // --- MOBILE TOUCH STATE ---
+        let lastTouchX = null;
+        let lastTouchY = null;
 
         // --- UI ELEMENTS ---
         const overlay = document.getElementById('overlay');
@@ -48,6 +53,9 @@
         const PLAYER_SIZE = 1.0; // Player bounding box half-width
 
         function init() {
+            // Check for mobile
+            isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
+
             // Get audio element
             bgMusic = document.getElementById('bgMusic');
 
@@ -98,10 +106,22 @@
 
             // --- EVENT LISTENERS ---
             window.addEventListener('resize', onWindowResize);
-            document.addEventListener('keydown', (e) => keys[e.code] = true);
-            document.addEventListener('keyup', (e) => keys[e.code] = false);
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('pointerlockchange', onPointerLockChange);
+            
+            if (isMobile) {
+                // Show touch controls
+                document.getElementById('touchControls').style.display = 'grid';
+                // Setup touch listeners
+                document.addEventListener('touchstart', onTouchStart, { passive: false });
+                document.addEventListener('touchmove', onTouchMove, { passive: false });
+                document.addEventListener('touchend', onTouchEnd);
+                setupTouchButtons();
+            } else {
+                // Setup keyboard/mouse listeners for PC
+                document.addEventListener('keydown', (e) => keys[e.code] = true);
+                document.addEventListener('keyup', (e) => keys[e.code] = false);
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('pointerlockchange', onPointerLockChange);
+            }
         }
 
         function createEnvironment() {
@@ -256,8 +276,10 @@
             uiElement.style.display = 'block';
             crosshair.style.display = 'block';
 
-            // Request pointer lock
-            document.body.requestPointerLock();
+            // Request pointer lock only on PC
+            if (!isMobile) {
+                document.body.requestPointerLock();
+            }
 
             // Play music
             if (bgMusic) {
@@ -274,8 +296,9 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+        // --- MOUSE/KEYBOARD CONTROLS (PC) ---
         function onMouseMove(event) {
-            if (gameState !== 'playing' || document.pointerLockElement !== document.body) return;
+            if (isMobile || gameState !== 'playing' || document.pointerLockElement !== document.body) return;
             cameraRotation.y -= event.movementX * 0.002;
             cameraRotation.x -= event.movementY * 0.002;
             cameraRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraRotation.x));
@@ -283,11 +306,81 @@
         }
         
         function onPointerLockChange() {
+            if (isMobile) return; // Not used on mobile
             if (document.pointerLockElement !== document.body && gameState === 'playing') {
                 gameOver(false, "You looked away... (Game Paused)");
             }
         }
 
+        // --- TOUCH CONTROLS (MOBILE) ---
+        function setupTouchButtons() {
+            const buttonMap = {
+                'touchUp': 'KeyW',
+                'touchDown': 'KeyS',
+                'touchLeft': 'KeyA',
+                'touchRight': 'KeyD'
+            };
+
+            for (const [buttonId, keyCode] of Object.entries(buttonMap)) {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.addEventListener('touchstart', (e) => {
+                        e.preventDefault(); // Prevent zoom or other default actions
+                        keys[keyCode] = true;
+                    }, { passive: false });
+
+                    button.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        keys[keyCode] = false;
+                    }, { passive: false });
+                }
+            }
+        }
+
+        function onTouchStart(event) {
+            // Check if the touch is on a button
+            if (event.target.classList.contains('touchButton')) {
+                lastTouchX = null; // Don't track camera moves if starting on a button
+                lastTouchY = null;
+                return;
+            }
+            
+            if (event.touches.length === 1 && gameState === 'playing') {
+                lastTouchX = event.touches[0].clientX;
+                lastTouchY = event.touches[0].clientY;
+                event.preventDefault(); // Prevent page scroll
+            }
+        }
+
+        function onTouchMove(event) {
+            if (lastTouchX === null || lastTouchY === null || gameState !== 'playing') {
+                return;
+            }
+
+            if (event.touches.length === 1) {
+                event.preventDefault(); // Prevent page scroll
+                const touchX = event.touches[0].clientX;
+                const touchY = event.touches[0].clientY;
+
+                const deltaX = touchX - lastTouchX;
+                const deltaY = touchY - lastTouchY;
+
+                cameraRotation.y -= deltaX * 0.005; // Adjusted sensitivity for touch
+                cameraRotation.x -= deltaY * 0.005;
+                cameraRotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cameraRotation.x));
+                camera.quaternion.setFromEuler(cameraRotation);
+
+                lastTouchX = touchX;
+                lastTouchY = touchY;
+            }
+        }
+
+        function onTouchEnd(event) {
+            lastTouchX = null;
+            lastTouchY = null;
+        }
+
+        // --- GAME LOOP ---
         function animate() {
             if (gameState !== 'playing') return;
             requestAnimationFrame(animate);
@@ -439,7 +532,9 @@
                 startButton.textContent = "TRY AGAIN?";
             }
             
-            document.exitPointerLock();
+            if (!isMobile) {
+                document.exitPointerLock();
+            }
         }
 
         // --- START THE APP ---
@@ -455,8 +550,16 @@
             background-color: #000;
             color: #ff0000; /* Blood red font */
             font-family: 'Creepster', cursive;
-            cursor: crosshair;
+            /* Cursor is crosshair on PC, but default on mobile */
         }
+        
+        /* Only show crosshair cursor on non-mobile devices */
+        @media (hover: hover) and (pointer: fine) {
+            body, html {
+                cursor: crosshair;
+            }
+        }
+
 
         /* The main UI for timer and messages */
         #ui {
@@ -557,11 +660,58 @@
         canvas {
             display: block;
         }
+        
+        /* --- MOBILE CONTROLS --- */
+        #touchControls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            display: none; /* Hidden by default, shown by JS */
+            grid-template-areas:
+                ". up ."
+                "left . right"
+                ". down .";
+            grid-template-rows: 60px 60px 60px;
+            grid-template-columns: 60px 60px 60px;
+            gap: 5px;
+            opacity: 0.5;
+        }
+        .touchButton {
+            font-size: 2em;
+            background: rgba(255, 0, 0, 0.3);
+            border: 2px solid #ff0000;
+            color: #ff0000;
+            border-radius: 10px;
+            user-select: none; /* Prevent text selection */
+            -webkit-user-select: none; /* Safari */
+        }
+        .grid-up { grid-area: up; }
+        .grid-left { grid-area: left; }
+        .grid-right { grid-area: right; }
+        .grid-down { grid-area: down; }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 768px) {
+            #overlay h1 {
+                font-size: 4em; /* Smaller title */
+            }
+            #statusContent p {
+                font-size: 1.5em; /* Smaller text */
+            }
+            #ui {
+                font-size: 1.8em; /* Smaller in-game UI */
+            }
+            .overlayButton {
+                font-size: 1.5em; /* Smaller menu buttons */
+                padding: 12px 24px;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="overlay" class="overlayBase">
-        <h1 id="statusTitle">Redacted's nightmare.</h1>
+        <h1 id="statusTitle">Redacted's Nightmare.</h1>
         <div id="statusContent">
             <p>
                 You are trapped in an abandoned factory. (re)dacted hunts you.
@@ -569,8 +719,6 @@
                 It only moves when you are not looking directly at it.
                 <br><br>
                 Survive for 5 minutes.
-                <br><br>
-                i will pray to god that you survive
             </p>
         </div>
         <div>
@@ -586,6 +734,13 @@
     <div id="crosshair" style="display: none;"></div>
 
     <audio id="bgMusic" loop src="./crpmusic.mp3"></audio>
+
+    <div id="touchControls" style="display: none;">
+        <button id="touchUp" class="touchButton grid-up">&#9650;</button>
+        <button id="touchLeft" class="touchButton grid-left">&#9664;</button>
+        <button id="touchRight" class="touchButton grid-right">&#9654;</button>
+        <button id="touchDown" class="touchButton grid-down">&#9660;</button>
+    </div>
 
 </body>
 </html>
