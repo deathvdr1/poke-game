@@ -254,7 +254,7 @@ const POKEMON_DATA = {
         ]}
     ],
     'ja': [
-        { id: 1, name: 'ピカチュウ', type: 'electric', 
+        { id: 1, name: 'ピカリ', type: 'electric', 
           // FIX: Replaced placeholder with local pika.png
           image: './pika.png', 
           attacks: [
@@ -263,7 +263,7 @@ const POKEMON_DATA = {
             { name: '10まんボルト', damage: 30, type: 'medium' }, // NEW type
             { name: 'ボルテッカー', damage: 50, type: 'heavy' }
         ]},
-        { id: 2, name: 'ヒトカゲ', type: 'fire', 
+        { id: 2, name: 'リトカゲ', type: 'fire', 
           // FIX: Replaced placeholder with local char.png
           image: './char.png', 
           attacks: [
@@ -272,7 +272,7 @@ const POKEMON_DATA = {
             { name: 'かえんほうしゃ', damage: 30, type: 'medium' }, // NEW type
             { name: 'フレアドライブ', damage: 50, type: 'heavy' }
         ]},
-        { id: 3, name: 'ゼニガメ', type: 'water', 
+        { id: 3, name: 'リガメ', type: 'water', 
           // FIX: Replaced placeholder with local squirtle.png
           image: './squirtle.png', 
           attacks: [
@@ -281,7 +281,7 @@ const POKEMON_DATA = {
             { name: 'みずでっぽう', damage: 30, type: 'medium' }, // NEW type
             { name: 'ハイドロポンプ', damage: 50, type: 'heavy' }
         ]},
-        { id: 4, name: 'フシギダネ', type: 'grass', 
+        { id: 4, name: 'リダネ', type: 'grass', 
           // FIX: Replaced placeholder with local bulba.png
           image: './bulba.png', 
           attacks: [
@@ -290,7 +290,7 @@ const POKEMON_DATA = {
             { name: 'はっぱカッター', damage: 30, type: 'medium' }, // NEW type
             { name: 'ソーラービーム', damage: 50, type: 'heavy' }
         ]},
-        { id: 5, name: 'イーブイ', type: 'normal', 
+        { id: 5, name: 'リイーブイ', type: 'normal', 
           // FIX: Replaced placeholder with local eevie.png
           image: './eevie.png', 
           attacks: [
@@ -1765,4 +1765,5 @@ function initEventListeners() {
 // so the DOM is guaranteed to be ready when this code executes.
 initDomElements(); // 1. Find all elements
 initEventListeners(); // 2. Attach all listeners
+
 initFirebase(); // 3. Start Firebase auth, which will then call initGame()
