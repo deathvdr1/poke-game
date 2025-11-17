@@ -104,8 +104,9 @@ body[lang="ja"] #opponent-pokemon-name {
     position: fixed;
     bottom: -150px; /* Start off-screen */
     left: 10%;
-    width: 60px;
-    height: 90px;
+    /* UPDATED: Default size is now 2x (smartphone) */
+    width: 180px;
+    height: 180px;
     z-index: 10;
     image-rendering: pixelated;
     animation: flyRocket 25s linear infinite;
@@ -136,8 +137,9 @@ body[lang="ja"] #opponent-pokemon-name {
     position: absolute;
     top: 20px;
     right: 20px;
-    width: 50px;
-    height: 50px;
+    /* UPDATED: Default size is now 1.5x (smartphone) */
+    width: 75px;
+    height: 75px;
     z-index: 50;
     animation: spin 8s linear infinite;
     image-rendering: pixelated;
@@ -196,15 +198,19 @@ body[lang="ja"] #opponent-pokemon-name {
     100% { box-shadow: 4px 4px 0px #000, 0 0 10px #ffcc00; }
 }
 
-/* Language Toggle */
-#language-toggle {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 50;
-    background-color: #4a5568;
-    padding: 0.75rem;
-    font-size: 0.75rem;
+/* --- NEW: MEDIA QUERY FOR PC SIZES --- */
+/* This block applies rules when the screen is 768px wide or larger */
+@media (min-width: 768px) {
+    #moving-rocket {
+        /* PC size: 5x */
+        width: 450px;
+        height: 450px;
+    }
+    .pokeball-logo {
+        /* PC size: 3x */
+        width: 100px;
+        height: 100px;
+    }
 }
 
 /* --- LOBBY STYLES --- */
@@ -386,4 +392,5 @@ body[lang="ja"] #opponent-pokemon-name {
 .type-fire-btn { background-color: #F08030 !important; color: #fff !important; }
 .type-water-btn { background-color: #6890F0 !important; color: #fff !important; }
 .type-grass-btn { background-color: #78C850 !important; color: #fff !important; }
+
 .type-normal-btn { background-color: #A8A878 !important; color: #fff !important; }
