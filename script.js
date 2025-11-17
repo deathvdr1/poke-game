@@ -31,7 +31,7 @@ const firebaseConfig = {
 // --- TRANSLATION DATA ---
 const UI_TEXT = {
     'en': {
-        'title_battle': 'Pokémon Battle',
+        'title_battle': '(re)Pokémon Battle',
         'title_choose': 'Choose Your Pokémon!',
         'play_ai': 'Play With AI',
         'play_friend': 'Play With Friend',
@@ -1767,3 +1767,4 @@ initDomElements(); // 1. Find all elements
 initEventListeners(); // 2. Attach all listeners
 
 initFirebase(); // 3. Start Firebase auth, which will then call initGame()
+
