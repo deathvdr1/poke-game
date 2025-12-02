@@ -367,6 +367,16 @@ let gameIdLabel;
 let gameIdText;
 let lobbyBackButton;
 
+// NEW: Event Battle elements
+let eventBattleBtn;
+let eventBattleScreen;
+let eventBackBtn;
+let eventCodeInput1;
+let eventCodeInput2;
+// NEW: Remove buttons
+let removeBtn1;
+let removeBtn2;
+
 // REVERTED: Removed Username prompt elements
 let lobbyContentContainer;
 
@@ -436,10 +446,12 @@ function initDomElements() {
     battleScreen = document.getElementById('battle-screen');
     victoryScreen = document.getElementById('victory-screen');
     helpScreen = document.getElementById('help-screen');
-    lobbyScreen = document.getElementById('lobby-screen'); // NEW
+    lobbyScreen = document.getElementById('lobby-screen');
+    eventBattleScreen = document.getElementById('event-battle-screen'); // NEW
 
     playAiButton = document.getElementById('play-ai-btn');
     playFriendButton = document.getElementById('play-friend-btn');
+    eventBattleBtn = document.getElementById('event-battle-btn'); // NEW
     helpButton = document.getElementById('help-btn');
     helpButtonText = document.getElementById('help-btn-text');
     helpTitle = document.getElementById('help-title');
@@ -462,6 +474,15 @@ function initDomElements() {
     gameIdLabel = document.getElementById('game-id-label');
     gameIdText = document.getElementById('game-id-text');
     lobbyBackButton = document.getElementById('lobby-back-btn');
+
+    // NEW: Event Battle DOM
+    eventBackBtn = document.getElementById('event-back-btn');
+    eventCodeInput1 = document.getElementById('event-code-3');
+    eventCodeInput2 = document.getElementById('event-code-2');
+    
+    // NEW: Remove Buttons
+    removeBtn1 = document.getElementById('remove-btn-1');
+    removeBtn2 = document.getElementById('remove-btn-2');
 
     // REVERTED: Removed Username prompt elements
     lobbyContentContainer = document.getElementById('lobby-content-container');
@@ -678,7 +699,8 @@ function initGame() {
     battleScreen.classList.add('hidden');
     victoryScreen.classList.add('hidden');
     helpScreen.classList.add('hidden');
-    lobbyScreen.classList.add('hidden'); // NEW
+    lobbyScreen.classList.add('hidden');
+    eventBattleScreen.classList.add('hidden'); // NEW
     mainTitle.classList.remove('hidden');
     
     // Detach any active game listener
@@ -748,6 +770,28 @@ function hideHelpScreen() {
     helpScreen.classList.add('hidden');
     mainTitle.classList.remove('hidden');
     updateAllText();
+}
+
+/**
+ * NEW: Shows the Event Battle Screen.
+ */
+function showEventBattleScreen() {
+    startScreen.classList.add('hidden');
+    eventBattleScreen.classList.remove('hidden');
+    mainTitle.classList.add('hidden');
+
+    // Load saved codes from localStorage
+    if (eventCodeInput1) eventCodeInput1.value = localStorage.getItem('event_code_row1') || '';
+    if (eventCodeInput2) eventCodeInput2.value = localStorage.getItem('event_code_row2') || '';
+}
+
+/**
+ * NEW: Hides the Event Battle Screen.
+ */
+function hideEventBattleScreen() {
+    startScreen.classList.remove('hidden');
+    eventBattleScreen.classList.add('hidden');
+    mainTitle.classList.remove('hidden');
 }
 
 /**
@@ -1729,7 +1773,30 @@ function initEventListeners() {
     restartButton.addEventListener('click', initGame);
     endGameButton.addEventListener('click', endGame);
     playAiButton.addEventListener('click', showAiSelectionScreen);
-    playFriendButton.addEventListener('click', showLobbyScreen); // UPDATED
+    playFriendButton.addEventListener('click', showLobbyScreen);
+    
+    // NEW: Event Battle Listeners
+    eventBattleBtn.addEventListener('click', showEventBattleScreen);
+    eventBackBtn.addEventListener('click', hideEventBattleScreen);
+    
+    // NEW: Save inputs on change
+    eventCodeInput1.addEventListener('input', (e) => localStorage.setItem('event_code_row1', e.target.value));
+    eventCodeInput2.addEventListener('input', (e) => localStorage.setItem('event_code_row2', e.target.value));
+
+    // NEW: Remove Button Listeners
+    if (removeBtn1) {
+        removeBtn1.addEventListener('click', () => {
+            eventCodeInput1.value = '';
+            localStorage.removeItem('event_code_row1');
+        });
+    }
+    if (removeBtn2) {
+        removeBtn2.addEventListener('click', () => {
+            eventCodeInput2.value = '';
+            localStorage.removeItem('event_code_row2');
+        });
+    }
+
     helpButton.addEventListener('click', showHelpScreen);
     helpBackButton.addEventListener('click', hideHelpScreen);
 
@@ -1767,4 +1834,3 @@ initDomElements(); // 1. Find all elements
 initEventListeners(); // 2. Attach all listeners
 
 initFirebase(); // 3. Start Firebase auth, which will then call initGame()
-
