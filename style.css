@@ -259,6 +259,11 @@ body[lang="ja"] #opponent-pokemon-name {
     color: #e0c8e0;
 }
 
+.event-input {
+    color: black !important;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
 /* NEW: Remove Code Button */
 .remove-code-btn {
     background-color: #b90000;
