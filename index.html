@@ -114,11 +114,11 @@
                     <span class="mr-2">?</span>
                     <span id="help-btn-text">...</span>
                 </button>
-<!-- PASTE THE NEW BUTTON CODE RIGHT HERE --><!-- FIX: Added onclick attribute to redirect to indexv2.html --><button id="scary-btn-2" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #200000 !important; border-color: #b90000 !important; color: #fbbfff;" onclick="window.location.href='indexv2.html'">
-    <span class="button-text" style="position: relative; z-index: 2;">Don't Turn Away</span>
-    <span class="blood-drop drop-1"></span>
-    <span class="blood-drop drop-2"></span>
-    <span class="blood-drop drop-3"></span>
+<!-- NEW HALL OF FAME BUTTON -->
+
+<!-- NEW EVENT BATTLE BUTTON (Replaces Don't Turn Away) -->
+<button id="event-battle-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #ff5722; color: #fff;">
+    Event Battle
 </button>
             </div>
         </div>
@@ -171,6 +171,67 @@
                 <li id="help-rule-3" class="heavy-rule">...</li>
             </ul>
             <button id="help-back-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4 mt-8 w-full" style="background-color: #610b9d;">...</button>
+        </div>
+
+
+        <!-- NEW: EVENT BATTLE SCREEN -->
+        <div id="event-battle-screen" class="hidden text-center text-white">
+            <h2 class="text-xl md:text-2xl mb-6 font-bold text-yellow-300" style="font-family: 'Press Start 2P', cursive;">Event Battle</h2>
+            
+            <div class="grid grid-cols-3 gap-4 mb-2 items-center text-sm md:text-base border-b-2 border-white/20 pb-2">
+                <div class="font-bold text-yellow-300 uppercase">Player</div>
+                <div class="font-bold text-yellow-300 uppercase">Battle Code</div>
+                <div class="font-bold text-yellow-300 uppercase">Player</div>
+            </div>
+
+            <!-- Row 1 -->
+            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
+                <div class="font-bold">.</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="event-code-3" maxlength="20" class="event-input w-full text-center" placeholder="Enter Code">
+                    <button id="remove-btn-1" class="remove-code-btn">X</button>
+                </div>
+                <div class="font-bold">.</div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
+                <div class="font-bold">.</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="event-code-2" maxlength="20" class="event-input w-full text-center" placeholder="Enter Code">
+                    <button id="remove-btn-2" class="remove-code-btn">X</button>
+                </div>
+                <div class="font-bold">.</div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
+                <div class="font-bold">.</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="event-code-3" maxlength="20" class="event-input w-full text-center" placeholder="Enter Code">
+                    <button class="remove-code-btn">X</button>
+                </div>
+                <div class="font-bold">.</div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
+                <div class="font-bold">.</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="event-code-4" maxlength="20" class="event-input w-full text-center" placeholder="Enter Code">
+                    <button class="remove-code-btn">X</button>
+                </div>
+                <div class="font-bold">.</div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
+                <div class="font-bold">.</div>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="event-code-5" maxlength="20" class="event-input w-full text-center" placeholder="Enter Code">
+                    <button class="remove-code-btn">X</button>
+                </div>
+                <div class="font-bold">.</div>
+            </div>
+
+            <button id="event-back-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4 mt-8 w-full" style="background-color: #610b9d;">Back</button>
         </div>
 
 
@@ -300,4 +361,3 @@
     <script src="script.js" type="module"></script>
 </body>
 </html>
-
