@@ -309,6 +309,7 @@ let appId = 'default-app-id'; // This will be replaced by __app_id
 let userId = null;
 let gameUnsubscribe = null; // To detach listener
 let gameDocRef = null;
+let eventCodesUnsubscribe = null; // NEW: Listener for event codes
 
 // --- GAME STATE ---
 let playerPokemon = null;
@@ -779,10 +780,9 @@ function showEventBattleScreen() {
     startScreen.classList.add('hidden');
     eventBattleScreen.classList.remove('hidden');
     mainTitle.classList.add('hidden');
-
-    // Load saved codes from localStorage
-    if (eventCodeInput1) eventCodeInput1.value = localStorage.getItem('event_code_row1') || '';
-    if (eventCodeInput2) eventCodeInput2.value = localStorage.getItem('event_code_row2') || '';
+    
+    // Note: We don't need to load from localStorage here anymore, 
+    // the Firestore listener handles it.
 }
 
 /**
@@ -974,6 +974,7 @@ async function initFirebase() {
                 console.log("Firebase Auth Ready. UserID:", userId);
                 // Now that auth is ready, initialize the game UI
                 initGame();
+                startEventCodeListener(); // NEW: Start listening to global event codes
             } else {
                 console.log("Firebase Auth: No user.");
                 userId = null;
@@ -1240,6 +1241,37 @@ function listenToGame() {
         console.error("Error in game listener:", error);
         // Handle error, maybe show a disconnect message
     });
+}
+
+/**
+ * NEW: Listens to global event codes for the battle screen.
+ */
+function startEventCodeListener() {
+    if (eventCodesUnsubscribe) eventCodesUnsubscribe();
+    // Path: artifacts/{appId}/public/data/event_data/global
+    const docRef = doc(db, `artifacts/${appId}/public/data/event_data/global`);
+    eventCodesUnsubscribe = onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            // Check if element is focused to avoid overwriting while typing
+            if (eventCodeInput1 && document.activeElement !== eventCodeInput1) {
+                 eventCodeInput1.value = data.row1 || '';
+            }
+            if (eventCodeInput2 && document.activeElement !== eventCodeInput2) {
+                 eventCodeInput2.value = data.row2 || '';
+            }
+        }
+    });
+}
+
+/**
+ * NEW: Saves event code to Firestore (helper function).
+ */
+function saveEventCode(row, value) {
+    if (!db) return;
+    const docRef = doc(db, `artifacts/${appId}/public/data/event_data/global`);
+    // Use merge: true to ensure the document exists and we only update the specific field
+    setDoc(docRef, { [row]: value }, { merge: true }).catch(e => console.error("Error saving code:", e));
 }
 
 
@@ -1779,21 +1811,26 @@ function initEventListeners() {
     eventBattleBtn.addEventListener('click', showEventBattleScreen);
     eventBackBtn.addEventListener('click', hideEventBattleScreen);
     
-    // NEW: Save inputs on change
-    eventCodeInput1.addEventListener('input', (e) => localStorage.setItem('event_code_row1', e.target.value));
-    eventCodeInput2.addEventListener('input', (e) => localStorage.setItem('event_code_row2', e.target.value));
+    // NEW: Save inputs on change (Debounced to avoid too many writes)
+    let debounceTimer;
+    eventCodeInput1.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => saveEventCode('row1', e.target.value), 500);
+    });
+    eventCodeInput2.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => saveEventCode('row2', e.target.value), 500);
+    });
 
-    // NEW: Remove Button Listeners
+    // NEW: Remove Button Listeners (Now saves empty string to Firestore)
     if (removeBtn1) {
         removeBtn1.addEventListener('click', () => {
-            eventCodeInput1.value = '';
-            localStorage.removeItem('event_code_row1');
+            saveEventCode('row1', '');
         });
     }
     if (removeBtn2) {
         removeBtn2.addEventListener('click', () => {
-            eventCodeInput2.value = '';
-            localStorage.removeItem('event_code_row2');
+             saveEventCode('row2', '');
         });
     }
 
