@@ -239,7 +239,7 @@ body[lang="ja"] #opponent-pokemon-name {
 
 /* REVERTED: Removed .lobby-input and .username-prompt-container */
 /* Style for the text inputs in the lobby */
-.lobby-input {
+.lobby-input, .event-input {
     background-color: rgba(255, 255, 255, 0.1);
     border: 2px solid #fbbfff;
     color: #ffffff;
@@ -250,13 +250,30 @@ body[lang="ja"] #opponent-pokemon-name {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
 }
-.lobby-input:focus {
+.lobby-input:focus, .event-input:focus {
     background-color: rgba(255, 255, 255, 0.2);
     border-color: #fa3df8;
     box-shadow: 0 0 15px rgba(250, 61, 248, 0.5);
 }
-.lobby-input::placeholder {
+.lobby-input::placeholder, .event-input::placeholder {
     color: #e0c8e0;
+}
+
+/* NEW: Remove Code Button */
+.remove-code-btn {
+    background-color: #b90000;
+    color: white;
+    border: 2px solid #fff;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 0.7rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px #000;
+    transition: transform 0.1s;
+}
+.remove-code-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
 }
 
 
