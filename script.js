@@ -904,6 +904,10 @@ async function selectPokemon(id) {
     const basePokemon = POKEMON_DATA['en'].find(p => p.id === id);
     // Create a deep copy to avoid modifying the original data
     playerPokemon = JSON.parse(JSON.stringify(basePokemon));
+
+    // FIX: Add a unique instance ID to ensure identical Pokemon (same ID) are treated as distinct entities
+    // This prevents logic errors when both players select the same Pokemon
+    playerPokemon.instanceId = `${localPlayerRole}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     if (gameMode === 'ai') {
         // --- AI Mode Selection ---
