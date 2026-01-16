@@ -10,11 +10,7 @@
     <link rel="stylesheet" href="style.css">
     <!-- Load custom pixel fonts for retro look -->
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display.swap" rel="stylesheet">
-    <!-- ... existing code ... -->
-
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display.swap" rel="stylesheet">
     
-    <!-- PASTE THE NEW STYLE BLOCK HERE -->
     <style>
         #scary-btn {
             position: relative; /* Required for the animation */
@@ -61,34 +57,25 @@
             }
         }
     </style>
-    <!-- END OF NEW STYLE BLOCK -->
     
 </head>
-<!-- ... existing code ... -->
-<!-- END OF NEW STYLE BLOCK -->
-<!-- ... existing code ... -->
-</head>
-<!-- Set default language for the body, styles are applied via lang attribute in CSS -->
 <body lang="en" class="flex flex-col items-center justify-center min-h-screen p-4">
 
-    <!-- NEW: Star Background -->
+    <!-- Star Background -->
     <div id="star-background">
         <div id="stars-small"></div>
         <div id="stars-medium"></div>
         <div id="stars-large"></div>
     </div>
 
-    <!-- NEW: Moving Rocket -->
-    <!-- FIX: Replaced placeholder with your local rocket.png -->
+    <!-- Moving Rocket -->
     <img id="moving-rocket"
          src="./rocket.png"
          alt="Moving Rocket"
          onerror="this.src='https://placehold.co/60x90/c0c0c0/c0c0c0?text=ERR'; this.style.imageRendering='pixelated'; this.onerror=null;"
          style="image-rendering: pixelated;">
 
-
     <!-- Pokeball Logo -->
-    <!-- FIX: Replaced placeholder with your local lgo.png -->
     <img src="./lgo.png"
          alt="Pokeball"
          class="pokeball-logo"
@@ -97,48 +84,59 @@
     <h1 id="main-title" class="text-xl md:text-2xl font-normal text-center text-white mb-6" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">...</h1>
 
     <!-- Game Container -->
-    <!-- FIX: Changed opacity from /80 to /50 -->
     <div id="game-container" class="w-full max-w-4xl bg-[#f462bd]/50 backdrop-blur-sm rounded-xl shadow-2xl p-4 md:p-8 border-4 border-gray-700" style="position: relative; z-index: 20;">
 
+        <!-- USERNAME SCREEN -->
+        <div id="username-screen" class="hidden text-center">
+             <h2 class="text-lg md:text-xl text-white mb-6" style="font-family: 'Press Start 2P', cursive;">Enter Username</h2>
+             <div class="flex flex-col items-center gap-4">
+                 <input type="text" id="username-input" placeholder="Trainer Name..." class="lobby-input w-full max-w-xs text-base md:text-xl text-center">
+                 <p id="username-error" class="text-red-400 text-xs min-h-[1.5em]"></p>
+                 <button id="save-username-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #2c7a00; color: #fff;">
+                    Start Game
+                 </button>
+             </div>
+        </div>
+
         <!-- START SCREEN -->
-        <div id="start-screen" class="text-center">
-            <div class="flex flex-col items-center justify-center gap-6 p-8 md:p-12">
+        <div id="start-screen" class="hidden text-center">
+            <div class="flex flex-col items-center justify-center gap-4 md:gap-6 p-4 md:p-12">
+                <!-- Welcome Message with Username -->
+                <p id="welcome-user-msg" class="text-white text-lg mb-2 font-bold" style="font-family: 'DotGothic16', sans-serif;"></p>
+                
                 <button id="play-ai-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #fa3df8; color: #fbbfff;">
                     ...
                 </button>
-                <!-- UPDATED: Removed disabled and maintenance text, added new style -->
                 <button id="play-friend-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #610b9d;">
                     ...
                 </button>
+                
+                <!-- NEW LEADERBOARD BUTTON -->
+                <button id="leaderboard-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #f7d02c; color: #333;">
+                    Leaderboard
+                </button>
+
                 <button id="help-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #fa3df8; color: #fbbfff;">
                     <span class="mr-2">?</span>
                     <span id="help-btn-text">...</span>
                 </button>
-<!-- NEW HALL OF FAME BUTTON -->
-
-<!-- NEW EVENT BATTLE BUTTON (Replaces Don't Turn Away) -->
-<button id="event-battle-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #ff5722; color: #fff;">
-    Event Battle
-</button>
+                
+                <button id="event-battle-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4" style="background-color: #ff5722; color: #fff;">
+                    Event Battle
+                </button>
             </div>
         </div>
 
-        <!-- NEW: MULTIPLAYER LOBBY SCREEN -->
+        <!-- MULTIPLAYER LOBBY SCREEN -->
         <div id="lobby-screen" class="hidden lobby-screen text-center">
-            <!-- Title will be changed by JS -->
             <h2 id="lobby-title" class="text-lg md:text-xl">...</h2>
             
-            <!-- REVERTED: Removed Username Prompt -->
-            
-            <!-- REVERTED: Container for lobby content (no longer hidden) -->
             <div id="lobby-content-container">
                 <p class="my-4 text-xs md:text-sm">
                     <span id="your-user-id-label">...</span>
-                    <!-- ADDED: This missing strong tag with the correct ID -->
                     <strong id="player-user-id" class="text-yellow-300 break-all">...</strong>
                 </p>
                 
-                <!-- ADDED: All these missing elements -->
                 <button id="create-game-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4 w-full" style="background-color: #2c7a00; color: #fbbfff;">
                     ...
                 </button>
@@ -148,7 +146,6 @@
                     ...
                 </button>
                 
-                <!-- RE-ADDED ALL MISSING LOBBY MESSAGES -->
                 <p id="lobby-error-msg" class="text-red-400 text-sm mt-4 h-4"></p>
                 <p id="waiting-for-player-msg" class="text-yellow-300 text-base mt-4 hidden">...</p>
                 
@@ -161,6 +158,22 @@
             </div>
         </div>
 
+        <!-- LEADERBOARD SCREEN -->
+        <div id="leaderboard-screen" class="hidden text-center text-white">
+            <h2 class="text-xl md:text-2xl mb-6 font-bold text-yellow-300" style="font-family: 'Press Start 2P', cursive;">Leaderboard</h2>
+            <div class="bg-black/60 p-4 rounded-lg border-2 border-yellow-500 max-w-lg mx-auto shadow-2xl">
+                <div class="grid grid-cols-3 gap-2 border-b-2 border-white/20 pb-2 mb-2 font-bold text-yellow-300 text-xs md:text-sm uppercase">
+                    <div>Rank</div>
+                    <div>Player</div>
+                    <div>Score</div>
+                </div>
+                <div id="leaderboard-list" class="space-y-2 text-xs md:text-sm h-64 overflow-y-auto custom-scrollbar">
+                    <!-- Rows will be injected here -->
+                    <p class="text-gray-400 py-4">Loading top players...</p>
+                </div>
+            </div>
+            <button id="leaderboard-back-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4 mt-8 w-full" style="background-color: #610b9d;">Back</button>
+        </div>
 
         <!-- HELP SCREEN -->
         <div id="help-screen" class="hidden help-screen">
@@ -174,81 +187,45 @@
         </div>
 
 
-        <!-- NEW: EVENT BATTLE SCREEN -->
+        <!-- EVENT BATTLE SCREEN -->
         <div id="event-battle-screen" class="hidden text-center text-white">
             <h2 class="text-xl md:text-2xl mb-6 font-bold text-yellow-300" style="font-family: 'Press Start 2P', cursive;">Event Battle</h2>
             
-            <div class="grid grid-cols-3 gap-4 mb-2 items-center text-sm md:text-base border-b-2 border-white/20 pb-2">
-                <div class="font-bold text-yellow-300 uppercase">Player</div>
-                <div class="font-bold text-yellow-300 uppercase">Battle Code</div>
-                <div class="font-bold text-yellow-300 uppercase">Player</div>
-            </div>
-
-            <!-- Row 1 -->
-            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
-                <div class="font-bold">.</div>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="event-code-3" maxlength="20" class="event-input w-full text-center text-black" placeholder="Enter Code">
-                    <button id="remove-btn-1" class="remove-code-btn">X</button>
+            <!-- 1. LOCKED STATE -->
+            <div id="event-locked-msg" class="hidden">
+                <div class="p-8 bg-red-900/50 border-4 border-red-500 rounded-xl">
+                    <p class="text-xl md:text-2xl text-red-200 mb-4">EVENT LOCKED</p>
+                    <p class="text-sm">There is no active event right now.</p>
                 </div>
-                <div class="font-bold">.</div>
             </div>
 
-            <!-- Row 2 -->
-            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
-                <div class="font-bold">.</div>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="event-code-2" maxlength="20" class="event-input w-full text-center text-black" placeholder="Enter Code">
-                    <button id="remove-btn-2" class="remove-code-btn">X</button>
+            <!-- 2. SIGN IN STATE -->
+            <div id="event-signin-ui" class="hidden">
+                <div class="p-6 bg-blue-900/50 border-4 border-blue-400 rounded-xl mb-6">
+                    <h3 class="text-lg text-blue-200 mb-4">Tournament Sign-Up</h3>
+                    <p class="mb-6">Do you want to sign in for the upcoming Event?</p>
+                    
+                    <button id="event-confirm-signin-btn" class="retro-btn !text-base !px-8 !py-4 w-full md:w-auto" style="background-color: #2c7a00; color: #fff;">
+                        YES, SIGN ME IN
+                    </button>
+                    <p id="event-signin-status" class="mt-4 text-green-300 hidden">You are signed in! Waiting for admin...</p>
                 </div>
-                <div class="font-bold">.</div>
             </div>
 
-            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
-                <div class="font-bold">.</div>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="event-code-3" maxlength="20" class="event-input w-full text-center text-black" placeholder="Enter Code">
-                    <button class="remove-code-btn">X</button>
+            <!-- 3. MATCHMAKING / BRACKET STATE -->
+            <div id="event-bracket-ui" class="hidden w-full">
+                <div class="flex justify-between items-center mb-4 px-2">
+                    <h3 class="text-yellow-300 text-lg">Current Matches</h3>
+                    <span id="event-round-label" class="text-xs bg-yellow-600 px-2 py-1 rounded text-black font-bold">ROUND 1</span>
                 </div>
-                <div class="font-bold">.</div>
-            </div>
 
-            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
-                <div class="font-bold">.</div>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="event-code-4" maxlength="20" class="event-input w-full text-center text-black" placeholder="Enter Code">
-                    <button class="remove-code-btn">X</button>
+                <div id="event-matches-list" class="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto p-2">
+                    <!-- Matches injected via JS -->
+                    <p class="text-gray-400">Waiting for matches to be published...</p>
                 </div>
-                <div class="font-bold">.</div>
             </div>
 
-            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
-                <div class="font-bold">.</div>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="event-code-5" maxlength="20" class="event-input w-full text-center text-black" placeholder="Enter Code">
-                    <button class="remove-code-btn">X</button>
-                </div>
-                <div class="font-bold">.</div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
-                <div class="font-bold">.</div>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="event-code-4" maxlength="20" class="event-input w-full text-center" placeholder="Enter Code">
-                    <button class="remove-code-btn">X</button>
-                </div>
-                <div class="font-bold">.</div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-4 mb-4 items-center">
-                <div class="font-bold">.</div>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="event-code-5" maxlength="20" class="event-input w-full text-center" placeholder="Enter Code">
-                    <button class="remove-code-btn">X</button>
-                </div>
-                <div class="font-bold">.</div>
-            </div>
-
+            <!-- Back Button -->
             <button id="event-back-btn" class="retro-btn !text-base md:!text-xl !px-8 !py-4 mt-8 w-full" style="background-color: #610b9d;">Back</button>
         </div>
 
@@ -285,9 +262,8 @@
                     <div class="flex flex-col items-center gap-1 md:flex-row md:items-center md:gap-2">
                         <img id="player-pokemon-img" src="https://placehold.co/150x150/EFEFEF/333?text=Player" alt="Player Pokémon" class="pokemon-sprite h-16 w-16 md:h-32 md:w-32 object-cover rounded mx-auto md:mx-0">
                         <div class="flex-1 w-full md:w-auto">
-                            <!-- NEW: Player 1/2 Title -->
+                            <!-- Player Username -->
                             <h2 id="player-username" class="text-sm md:text-lg font-bold text-center md:text-left truncate">...</h2>
-                            <!-- REVERTED: Removed Player Username -->
                             <h3 id="player-pokemon-name" class="text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left">...</h3>
                             <span id="player-hp-text" class="block text-[0.5rem] md:text-sm font-normal text-center md:text-left">HP: 100/100</span>
                             <div class="hp-bar-outer w-full h-4 md:h-5 mt-1 md:mt-2">
@@ -297,15 +273,13 @@
                     </div>
                 </div>
                 
-                <!-- Opponent Box (was AI Box) -->
-                <!-- RENAMED all 'ai-' IDs to 'opponent-' -->
+                <!-- Opponent Box -->
                 <div id="opponent-box" class="p-1 md:p-4 rounded-lg border-2 border-gray-400 shadow-md">
                     <div class="flex flex-col items-center gap-1 md:flex-row md:items-center md:gap-2">
                         <img id="opponent-pokemon-img" src="https://placehold.co/150x150/EFEFEF/333?text=Opponent" alt="Opponent Pokémon" class="pokemon-sprite h-16 w-16 md:h-32 md:w-32 object-cover rounded mx-auto md:mx-0">
                         <div class="flex-1 w-full md:w-auto">
-                            <!-- NEW: Player 1/2 Title -->
+                            <!-- Opponent Username -->
                             <h2 id="opponent-username" class="text-sm md:text-lg font-bold text-center md:text-left truncate">...</h2>
-                            <!-- REVERTED: Removed Opponent Username -->
                             <h3 id="opponent-pokemon-name" class="text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left">...</h3>
                             <span id="opponent-hp-text" class="block text-[0.5rem] md:text-sm font-normal text-center md:text-left">HP: 100/100</span>
                             <div class="hp-bar-outer w-full h-4 md:h-5 mt-1 md:mt-2">
@@ -339,9 +313,7 @@
         <div id="victory-screen" class="hidden text-center">
             <div class="relative w-64 h-64 md:w-80 md:h-80 mx-auto">
                 <img id="winner-img" src="https://placehold.co/320x320/EFEFEF/333?text=Winner" alt="Winner" class="w-full h-full object-cover rounded-full shadow-lg border-4 border-yellow-400">
-                <!-- UPDATED: Wrapper div for vertical centering -->
                 <div class="absolute inset-0 flex flex-col items-center justify-center">
-                    <!-- REVERTED: Removed Winner Username -->
                     <h1 id="victory-text" class="victory-text-base">...</h1>
                 </div>
             </div>
@@ -358,8 +330,6 @@
         日本語
     </button>
     
-    <!-- FIX: REMOVED Video Overlay -->
-    
     <!-- Log Review Overlay -->
     <div id="log-review-overlay" class="hidden fixed inset-0 bg-black/90 p-4 z-[100] flex flex-col items-center justify-center">
         <div class="w-full max-w-2xl bg-[#1a0b2e] p-4 md:p-6 rounded-lg border-2 border-gray-500">
@@ -371,11 +341,10 @@
         </div>
     </div>
 
-    <!-- NEW: Background Music -->
-    <!-- This audio element will be controlled by script.js -->
+    <!-- Background Music -->
     <audio id="bg-music" src="pokmusic.mp3" loop preload="auto"></audio>
 
-    <!-- Link to external JS file, 'type=module' is important for imports -->
+    <!-- Link to external JS file -->
     <script src="script.js" type="module"></script>
 </body>
 </html>
