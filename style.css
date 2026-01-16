@@ -40,19 +40,16 @@ body[lang="ja"] #opponent-pokemon-name {
     z-index: 1;
 }
 
-/* REMOVED @function and $shadows variables */
-
 @keyframes animStar {
     from { transform: translateY(0px); }
     to { transform: translateY(-2000px); }
 }
 
-/* REPLACED with pure CSS box-shadows */
+/* Pure CSS box-shadows */
 #stars-small {
     width: 1px;
     height: 1px;
     background: transparent;
-    /* Added a few example shadows. A real implementation would have hundreds. */
     box-shadow: 785px 1867px #FFF, 126px 1474px #FFF, 1756px 632px #FFF, 1238px 973px #FFF, 938px 902px #FFF, 1168px 1195px #FFF, 1102px 1739px #FFF, 62px 1417px #FFF, 1264px 1231px #FFF, 1205px 490px #FFF, 1044px 182px #FFF, 1024px 633px #FFF, 84px 389px #FFF, 1827px 1104px #FFF, 1188px 911px #FFF, 1983px 44px #FFF, 1143px 303px #FFF, 1311px 1913px #FFF, 422px 1358px #FFF, 1018px 1228px #FFF;
     animation: animStar 50s linear infinite;
 }
@@ -104,7 +101,6 @@ body[lang="ja"] #opponent-pokemon-name {
     position: fixed;
     bottom: -150px; /* Start off-screen */
     left: 10%;
-    /* UPDATED: Default size is now 2x (smartphone) */
     width: 180px;
     height: 180px;
     z-index: 10;
@@ -137,7 +133,6 @@ body[lang="ja"] #opponent-pokemon-name {
     position: absolute;
     top: 20px;
     right: 20px;
-    /* UPDATED: Default size is now 1.5x (smartphone) */
     width: 75px;
     height: 75px;
     z-index: 50;
@@ -198,23 +193,20 @@ body[lang="ja"] #opponent-pokemon-name {
     100% { box-shadow: 4px 4px 0px #000, 0 0 10px #ffcc00; }
 }
 
-/* --- NEW: MEDIA QUERY FOR PC SIZES --- */
-/* This block applies rules when the screen is 768px wide or larger */
+/* --- MEDIA QUERY FOR PC SIZES --- */
 @media (min-width: 768px) {
     #moving-rocket {
-        /* PC size: 5x */
         width: 450px;
         height: 450px;
     }
     .pokeball-logo {
-        /* PC size: 3x */
         width: 100px;
         height: 100px;
     }
 }
 
-/* --- LOBBY STYLES --- */
-.lobby-screen, .help-screen {
+/* --- SCREEN STYLES --- */
+.lobby-screen, .help-screen, #username-screen {
     color: #fff;
 }
 .help-screen ul {
@@ -237,8 +229,7 @@ body[lang="ja"] #opponent-pokemon-name {
     font-weight: bold;
 }
 
-/* REVERTED: Removed .lobby-input and .username-prompt-container */
-/* Style for the text inputs in the lobby */
+/* Text Inputs */
 .lobby-input, .event-input {
     background-color: rgba(255, 255, 255, 0.1);
     border: 2px solid #fbbfff;
@@ -264,7 +255,7 @@ body[lang="ja"] #opponent-pokemon-name {
     background-color: rgba(255, 255, 255, 0.9);
 }
 
-/* NEW: Remove Code Button */
+/* Remove Code Button */
 .remove-code-btn {
     background-color: #b90000;
     color: white;
@@ -347,30 +338,16 @@ body[lang="ja"] #opponent-pokemon-name {
         font-size: 3rem;
     }
 }
-.victory-text-win {
-    color: #ffeb3b; /* Yellow */
-}
-.victory-text-lose {
-    color: #f44336; /* Red */
-}
-.victory-text-draw {
-    color: #9e9e9e; /* Gray */
-}
+.victory-text-win { color: #ffeb3b; }
+.victory-text-lose { color: #f44336; }
+.victory-text-draw { color: #9e9e9e; }
 
 
 /* --- ANIMATIONS --- */
-.pokemon-sprite {
-    transition: transform 0.2s ease;
-}
-.attacking {
-    animation: attack-player 0.2s ease-out;
-}
-.opponent-attacking {
-    animation: attack-opponent 0.2s ease-out;
-}
-.taking-damage {
-    animation: take-damage 0.3s linear;
-}
+.pokemon-sprite { transition: transform 0.2s ease; }
+.attacking { animation: attack-player 0.2s ease-out; }
+.opponent-attacking { animation: attack-opponent 0.2s ease-out; }
+.taking-damage { animation: take-damage 0.3s linear; }
 
 @keyframes attack-player {
     0% { transform: translate(0, 0); }
@@ -392,7 +369,7 @@ body[lang="ja"] #opponent-pokemon-name {
 
 /* --- TYPE COLORS --- */
 /* Backgrounds */
-.type-electric-bg { background-color: #F7D02C !important; } /* FIX: Was #FFEB3B */
+.type-electric-bg { background-color: #F7D02C !important; }
 .type-fire-bg { background-color: #F44336 !important; }
 .type-water-bg { background-color: #2196F3 !important; }
 .type-grass-bg { background-color: #4CAF50 !important; }
@@ -416,3 +393,4 @@ body[lang="ja"] #opponent-pokemon-name {
 .type-grass-btn { background-color: #78C850 !important; color: #fff !important; }
 
 .type-normal-btn { background-color: #A8A878 !important; color: #fff !important; }
+
