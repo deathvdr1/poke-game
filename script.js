@@ -1,5 +1,4 @@
 // --- FIREBASE IMPORTS ---
-// FIX: Added all Firebase imports directly to this file
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { 
@@ -7,17 +6,22 @@ import {
     doc, 
     setDoc, 
     getDoc,
+    getDocs,
+    query,
+    where,
     onSnapshot, 
     updateDoc, 
     deleteDoc, 
     serverTimestamp,
     arrayUnion,
     setLogLevel,
-    collection // FIX: Added the missing import for collection()
+    collection,
+    increment,
+    orderBy,
+    limit
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- FIREBASE CONFIG ---
-// User-provided config (as fallback)
 const firebaseConfig = {
   apiKey: "AIzaSyBu05x09GesEm9zSwrnzQbN2SV03q3xF-0",
   authDomain: "re-fight.firebaseapp.com",
@@ -28,7 +32,7 @@ const firebaseConfig = {
   measurementId: "G-RC3WBTFK5J"
 };
 
-// --- TRANSLATION DATA ---
+// ... (UI_TEXT, MISS_MESSAGES, POKEMON_DATA objects remain unchanged) ...
 const UI_TEXT = {
     'en': {
         'title_battle': '(re)Pokémon Battle',
@@ -37,16 +41,16 @@ const UI_TEXT = {
         'play_friend': 'Play With Friend',
         'maintenance': 'Under Maintenance',
         'your_turn': 'Your Turn!',
-        'opponents_turn': "Opponent's Turn", // NEW
+        'opponents_turn': "Opponent's Turn",
         'battle_log': 'Battle Log',
         'turn_counter': (current, max) => `Turn: ${current} / ${max}`,
         'log_welcome': 'Welcome! Choose your Pokémon to begin.',
         'log_player_chose': (name) => `You chose ${name}!`,
         'log_ai_chose': (name) => `The AI chose ${name}!`,
-        'log_opponent_chose': (name) => `Opponent chose ${name}!`, // NEW
+        'log_opponent_chose': (name) => `Opponent chose ${name}!`,
         'log_battle_begin': 'Let the battle begin!',
         'log_player_command': (pokemon, attack) => `You commanded ${pokemon} to use ${attack}!`,
-        'log_opponent_command': (pokemon, attack) => `Opponent's ${pokemon} uses ${attack}!`, // NEW
+        'log_opponent_command': (pokemon, attack) => `Opponent's ${pokemon} uses ${attack}!`,
         'log_miss': (reason) => `...but ${reason}`,
         'log_hit': (attack, damage) => `${attack} hit! It dealt ${damage} damage.`,
         'log_ai_attack': (pokemon, attack) => `The AI's ${pokemon} uses ${attack}!`,
@@ -54,116 +58,116 @@ const UI_TEXT = {
         'log_ai_focus': (pokemon) => `The AI's ${pokemon} is focusing its power!`,
         'log_ai_fainted': (pokemon) => `The AI's ${pokemon} fainted!`,
         'log_player_fainted': (pokemon) => `Your ${pokemon} fainted!`,
-        'log_opponent_fainted': (pokemon) => `Opponent's ${pokemon} fainted!`, // NEW
+        'log_opponent_fainted': (pokemon) => `Opponent's ${pokemon} fainted!`,
         'log_times_up': "The battle is over! Time's up!",
         'log_player_hp_win': 'You have more HP! You win!',
         'log_ai_hp_win': 'The AI has more HP! You lose.',
-        'log_opponent_hp_win': 'Opponent has more HP! You lose.', // NEW
+        'log_opponent_hp_win': 'Opponent has more HP! You lose.',
         'log_draw': "It's a draw!",
         'log_forfeit': 'You forfeited the match!',
-        'log_opponent_forfeit': 'Opponent forfeited the match!', // NEW
+        'log_opponent_forfeit': 'Opponent forfeited the match!',
         'hp_text': (current, max) => `HP: ${current}/${max}`,
-        'victory': (name) => `${name} WINS!`, // UPDATED
-        'defeat': (name) => `${name} WINS...`, // UPDATED
+        'victory': (name) => `${name} WINS!`,
+        'defeat': (name) => `${name} WINS...`,
         'draw': "IT'S A DRAW!",
         'play_again': 'Play Again',
         'end_game': 'End Game',
         'help': 'Help',
         'help_title': 'How to Play',
         'help_rule_1': 'Attacks have different power levels (Basic ~20, Medium ~30-40, Heavy ~50-60).',
-        // UPDATED Rule 2 to reflect new logic
         'help_rule_2': 'Basic/Heavy attacks have 40% miss chance. Medium attacks have 70% miss chance.',
         'help_rule_3': 'Heavy Attacks (e.g., Volt Tackle) can ONLY be used when your HP is less than 50 (49 or less)!',
         'help_back': 'Back',
         'view_log': 'View Final Log',
         'log_review_title': 'Final Battle Log',
-        'lobby_title': 'Multiplayer Lobby', // NEW
-        'your_user_id': 'Your User ID:', // NEW
-        'create_game': 'Create Game', // NEW
-        'lobby_or': '--- OR ---', // NEW
-        'join_game': 'Join Game', // NEW
-        'game_id_placeholder': 'Enter Game ID...', // NEW
-        'lobby_error_joining': 'Error: Could not find game or game is full.', // NEW
-        'lobby_error_creating': 'Error: Could not create game.', // NEW
-        'waiting_for_player': 'Waiting for opponent to join...', // NEW
-        'game_id_label': 'Share Game ID:', // NEW
-        'lobby_back': 'Back to Menu', // NEW
-        'selection_title': 'Choose Your Pokémon!', // NEW
-        'waiting_for_opponent_selection': 'Waiting for opponent to choose...', // NEW
-        'player1_name': 'Player 1', // NEW
-        'player2_name': 'Player 2', // NEW
-        // REVERTED: Removed Username text
+        'lobby_title': 'Multiplayer Lobby',
+        'your_user_id': 'Your User ID:',
+        'create_game': 'Create Game',
+        'lobby_or': '--- OR ---',
+        'join_game': 'Join Game',
+        'game_id_placeholder': 'Enter Game ID...',
+        'lobby_error_joining': 'Error: Could not find game or game is full.',
+        'lobby_error_creating': 'Error: Could not create game.',
+        'waiting_for_player': 'Waiting for opponent to join...',
+        'game_id_label': 'Share Game ID:',
+        'lobby_back': 'Back to Menu',
+        'selection_title': 'Choose Your Pokémon!',
+        'waiting_for_opponent_selection': 'Waiting for opponent to choose...',
+        'player1_name': 'Player 1',
+        'player2_name': 'Player 2',
+        'welcome_user': (name) => `Welcome, ${name}!`,
+        'leaderboard': 'Leaderboard',
     },
     'ja': {
+        // ... (Keep Japanese translations) ...
         'title_battle': 'ポケモンバトル',
         'title_choose': 'ポケモンをえらんでね！',
         'play_ai': 'AIとたいせん',
         'play_friend': 'ともだちとたいせん',
         'maintenance': 'メンテナンスちゅう',
         'your_turn': 'あなたのターン！',
-        'opponents_turn': "あいてのターン", // NEW
+        'opponents_turn': "あいてのターン",
         'battle_log': 'バトルログ',
         'turn_counter': (current, max) => `ターン: ${current} / ${max}`,
         'log_welcome': 'ようこそ！ポケモンをえらんでね。',
         'log_player_chose': (name) => `あなたは ${name} をえらんだ！`,
         'log_ai_chose': (name) => `AIは ${name} をえらんだ！`,
-        'log_opponent_chose': (name) => `あいては ${name} をえらんだ！`, // NEW
+        'log_opponent_chose': (name) => `あいては ${name} をえらんだ！`,
         'log_battle_begin': 'バトルかいし！',
         'log_player_command': (pokemon, attack) => `いけっ ${pokemon}！ ${attack}！`,
-        'log_opponent_command': (pokemon, attack) => `あいての ${pokemon} は ${attack} をつかった！`, // NEW
+        'log_opponent_command': (pokemon, attack) => `あいての ${pokemon} は ${attack} をつかった！`,
         'log_miss': (reason) => `...しかし ${reason}`,
         'log_hit': (attack, damage) => `${attack} があたった！ ${damage} のダメージ。`,
         'log_ai_attack': (pokemon, attack) => `AIの ${pokemon} は ${attack} をつかった！`,
-        'log_heavy_fail': (attack) => `HPが50いじょうのときは ${attack} はつかえない！`, // Corrected logic
+        'log_heavy_fail': (attack) => `HPが50いじょうのときは ${attack} はつかえない！`,
         'log_ai_focus': (pokemon) => `AIの ${pokemon} はちからをためている！`,
         'log_ai_fainted': (pokemon) => `AIの ${pokemon} はたおれた！`,
         'log_player_fainted': (pokemon) => `あなたの ${pokemon} はたおれた！`,
-        'log_opponent_fainted': (pokemon) => `あいての ${pokemon} はたおれた！`, // NEW
+        'log_opponent_fainted': (pokemon) => `あいての ${pokemon} はたおれた！`,
         'log_times_up': 'バトルしゅうりょう！ じかんぎれ！',
         'log_player_hp_win': 'あなたのHPがおおい！ あなたの勝ち！',
         'log_ai_hp_win': 'AIのHPがおおい！ あなたのまけ。',
-        'log_opponent_hp_win': 'あいてのHPがおおい！ あなたのまけ。', // Fixed typo
+        'log_opponent_hp_win': 'あいてのHPがおおい！ あなたのまけ。',
         'log_draw': 'ひきわけ！',
         'log_forfeit': 'しょうぶをあきらめた！',
-        'log_opponent_forfeit': 'あいてが しょうぶを あきらめた！', // NEW
+        'log_opponent_forfeit': 'あいてが しょうぶを あきらめた！',
         'hp_text': (current, max) => `HP: ${current}/${max}`,
-        'victory': (name) => `${name} の しょうり！`, // UPDATED
-        'defeat': (name) => `${name} の しょうり...`, // UPDATED
+        'victory': (name) => `${name} の しょうり！`,
+        'defeat': (name) => `${name} の しょうり...`,
         'draw': 'ひきわけ',
         'play_again': 'もういっかい',
         'end_game': 'おわる',
         'help': 'ヘルプ',
         'help_title': 'あそびかた',
         'help_rule_1': 'こうげきには いろいろな いりょくが あるよ (じゃく: ~20, ちゅう: ~30-40, きょう: ~50-60)。',
-        // UPDATED Rule 2 to reflect new logic
         'help_rule_2': '「じゃく」/「きょう」こうげきは 40%はずれる。「ちゅう」こうげきは 70%はずれる。',
         'help_rule_3': '「きょう」こうげき (ボルテッカーなど) は、じぶんのHPが 50みまん (49いか) のときだけ つかえる！',
         'help_back': 'もどる',
         'view_log': 'さいしゅうログ',
         'log_review_title': 'さいしゅうバトルログ',
-        'lobby_title': 'マルチプレイ ロビー', // NEW
-        'your_user_id': 'あなたのID:', // NEW
-        'create_game': 'ゲームを つくる', // NEW
-        'lobby_or': '--- または ---', // NEW
-        'join_game': 'ゲームに はいる', // NEW
-        'game_id_placeholder': 'ゲームIDを にゅうりょく...', // NEW
-        'lobby_error_joining': 'エラー: ゲームが みつからないか、まんいんです。', // NEW
-        'lobby_error_creating': 'エラー: ゲームを つくれませんでした。', // NEW
-        'waiting_for_player': 'あいてを まっています...', // NEW
-        'game_id_label': 'ゲームIDを おしえてね:', // NEW
-        'lobby_back': 'メニューへ もどる', // NEW
-        'selection_title': 'ポケモンをえらんでね！', // NEW
-        'waiting_for_opponent_selection': 'あいてが えらぶのを まっています...', // NEW
-        'player1_name': 'プレイヤー1', // NEW
-        'player2_name': 'プレイヤー2', // NEW
-        // REVERTED: Removed Username text
+        'lobby_title': 'マルチプレイ ロビー',
+        'your_user_id': 'あなたのID:',
+        'create_game': 'ゲームを つくる',
+        'lobby_or': '--- または ---',
+        'join_game': 'ゲームに はいる',
+        'game_id_placeholder': 'ゲームIDを にゅうりょく...',
+        'lobby_error_joining': 'エラー: ゲームが みつからないか、まんいんです。',
+        'lobby_error_creating': 'エラー: ゲームを つくれませんでした。',
+        'waiting_for_player': 'あいてを まっています...',
+        'game_id_label': 'ゲームIDを おしえてね:',
+        'lobby_back': 'メニューへ もどる',
+        'selection_title': 'ポケモンをえらんでね！',
+        'waiting_for_opponent_selection': 'あいてが えらぶのを まっています...',
+        'player1_name': 'プレイヤー1',
+        'player2_name': 'プレイヤー2',
+        'welcome_user': (name) => `ようこそ、${name}さん！`,
+        'leaderboard': 'リーダーボード',
     }
 };
 
-// --- MISS_MESSAGES ---
 const MISS_MESSAGES = {
     'en': [
-        "its brain momentarily believed it was JMike the Pirate and went searching for buried treasure.", // FIX: it's -> its
+        "its brain momentarily believed it was JMike the Pirate and went searching for buried treasure.",
         "it got an alert from Discord about an urgent hype squad post. Priorities, people.",
         "it was about to finish, but Chaz sent it a video of a cat singing opera.",
         "it got an alert from Discord about an urgent hype squad post. Priorities, people.",
@@ -179,7 +183,7 @@ const MISS_MESSAGES = {
         "The gentle rhythm of its work was interrupted when it heard Croket doing stand-up comedy in its head.",
         "It got distracted by a sudden, urgent need to know what Chely's favorite type of cloud is.",
         "It had to stop and mentally high-five Croket for being so impeccably blue.",
-        "It briefly forgot the task because it was trying to imitate the deep, thoughtful gaze of Croket the Frog.", // FIX: Corrected "I was" to "it was"
+        "It briefly forgot the task because it was trying to imitate the deep, thoughtful gaze of Croket the Frog.",
         "It blames Chaz. The thought of him riding a tiny unicycle was too powerful to ignore."
     ],
     'ja': [
@@ -197,262 +201,141 @@ const MISS_MESSAGES = {
         "チェリーの あたらしい ぼうしのデザインにかんする とつぜんの ひらめきが...！",
         "あたまのなかで クロケット・ザ・フロッグが スタンドアップコメディを はじめ、おだやかな しごとのリズムが みだされた。",
         "チェリーの すきな くもの しゅるいを しらなければという、とつぜんの きんきゅうの しょうどうに かられた。",
-        "クロケット・ザ・フロッグの あまりにも かんぺきな みどりいろに、こころのなかで ハイタッチするしか なかった。", // FIX: Corrected typo
+        "クロケット・ザ・フロッグの あまりにも かんぺきな みどりいろに、こころのなかで ハイタッチするしか なかった。",
         "クロケット・ザ・フロッグの ふかく ものおもいに ふける まなざしを マネしようとして、タスクを わすれた。",
         "チャズのせいだ。かれが ちいさな いちりんしゃに のっている すがたを そうぞうしたら、むしできなかった。"
     ]
 };
 
-
-// --- DATA ---
 const POKEMON_DATA = {
     'en': [
-        { id: 1, name: 'Pika(re)', type: 'electric', 
-          // FIX: Replaced placeholder with local pika.png
-          image: './pika.png', 
-          attacks: [
+        { id: 1, name: 'Pika(re)', type: 'electric', image: './pika.png', attacks: [
             { name: 'Quick Attack', damage: 20 },
             { name: 'Thunder Shock', damage: 20 },
-            { name: 'Thunder Bolt', damage: 30, type: 'medium' }, // NEW type
+            { name: 'Thunder Bolt', damage: 30, type: 'medium' },
             { name: 'Volt Tackle', damage: 50, type: 'heavy' }
         ]},
-        { id: 2, name: '(re)mander', type: 'fire', 
-          // FIX: Replaced placeholder with local char.png
-          image: './char.png', 
-          attacks: [
+        { id: 2, name: '(re)mander', type: 'fire', image: './char.png', attacks: [
             { name: 'Scratch', damage: 20 },
             { name: 'Ember', damage: 20 },
-            { name: 'Flamethrower', damage: 30, type: 'medium' }, // NEW type
+            { name: 'Flamethrower', damage: 30, type: 'medium' },
             { name: 'Flare Blitz', damage: 50, type: 'heavy' }
         ]},
-        { id: 3, name: 'Squi(re)tle', type: 'water', 
-          // FIX: Replaced placeholder with local squirtle.png
-          image: './squirtle.png', 
-          attacks: [
+        { id: 3, name: 'Squi(re)tle', type: 'water', image: './squirtle.png', attacks: [
             { name: 'Tackle', damage: 20 },
             { name: 'Bubble', damage: 20 },
-            { name: 'Water Gun', damage: 40, type: 'medium' }, // NEW type
+            { name: 'Water Gun', damage: 40, type: 'medium' },
             { name: 'Hydro Pump', damage: 60, type: 'heavy' }
         ]},
-        { id: 4, name: 'Bulbasau(re)', type: 'grass', 
-          // FIX: Replaced placeholder with local bulba.png
-          image: './bulba.png', 
-          attacks: [
+        { id: 4, name: 'Bulbasau(re)', type: 'grass', image: './bulba.png', attacks: [
             { name: 'Tackle', damage: 20 },
             { name: 'Vine Whip', damage: 20 },
-            { name: 'Razor Leaf', damage: 30, type: 'medium' }, // NEW type
+            { name: 'Razor Leaf', damage: 30, type: 'medium' },
             { name: 'Solar Beam', damage: 50, type: 'heavy' }
         ]},
-        { id: 5, name: '(re)evee', type: 'normal', 
-          // FIX: Replaced placeholder with local eevie.png
-          image: './eevie.png', 
-          attacks: [
+        { id: 5, name: '(re)evee', type: 'normal', image: './eevie.png', attacks: [
             { name: 'Tackle', damage: 20 },
             { name: 'Quick Attack', damage: 20 },
-            { name: 'Swift', damage: 40, type: 'medium' }, // NEW type
+            { name: 'Swift', damage: 40, type: 'medium' },
             { name: 'Last Resort', damage: 60, type: 'heavy' }
         ]}
     ],
     'ja': [
-        { id: 1, name: 'ピカリ', type: 'electric', 
-          // FIX: Replaced placeholder with local pika.png
-          image: './pika.png', 
-          attacks: [
+        { id: 1, name: 'ピカリ', type: 'electric', image: './pika.png', attacks: [
             { name: 'でんこうせっか', damage: 20 },
             { name: 'でんきショック', damage: 20 },
-            { name: '10まんボルト', damage: 30, type: 'medium' }, // NEW type
+            { name: '10まんボルト', damage: 30, type: 'medium' },
             { name: 'ボルテッカー', damage: 50, type: 'heavy' }
         ]},
-        { id: 2, name: 'リトカゲ', type: 'fire', 
-          // FIX: Replaced placeholder with local char.png
-          image: './char.png', 
-          attacks: [
+        { id: 2, name: 'リトカゲ', type: 'fire', image: './char.png', attacks: [
             { name: 'ひっかく', damage: 20 },
             { name: 'ひのこ', damage: 20 },
-            { name: 'かえんほうしゃ', damage: 30, type: 'medium' }, // NEW type
+            { name: 'かえんほうしゃ', damage: 30, type: 'medium' },
             { name: 'フレアドライブ', damage: 50, type: 'heavy' }
         ]},
-        { id: 3, name: 'リガメ', type: 'water', 
-          // FIX: Replaced placeholder with local squirtle.png
-          image: './squirtle.png', 
-          attacks: [
+        { id: 3, name: 'リガメ', type: 'water', image: './squirtle.png', attacks: [
             { name: 'たいあたり', damage: 20 },
             { name: 'あわ', damage: 20 },
-            { name: 'みずでっぽう', damage: 30, type: 'medium' }, // NEW type
+            { name: 'みずでっぽう', damage: 30, type: 'medium' },
             { name: 'ハイドロポンプ', damage: 50, type: 'heavy' }
         ]},
-        { id: 4, name: 'リダネ', type: 'grass', 
-          // FIX: Replaced placeholder with local bulba.png
-          image: './bulba.png', 
-          attacks: [
+        { id: 4, name: 'リダネ', type: 'grass', image: './bulba.png', attacks: [
             { name: 'たいあたり', damage: 20 },
             { name: 'つるのムチ', damage: 20 },
-            { name: 'はっぱカッター', damage: 30, type: 'medium' }, // NEW type
+            { name: 'はっぱカッター', damage: 30, type: 'medium' },
             { name: 'ソーラービーム', damage: 50, type: 'heavy' }
         ]},
-        { id: 5, name: 'リイーブイ', type: 'normal', 
-          // FIX: Replaced placeholder with local eevie.png
-          image: './eevie.png', 
-          attacks: [
+        { id: 5, name: 'リイーブイ', type: 'normal', image: './eevie.png', attacks: [
             { name: 'たいあたり', damage: 20 },
             { name: 'でんこうせっか', damage: 20 },
-            { name: 'スピードスター', damage: 40, type: 'medium' }, // NEW type
+            { name: 'スピードスター', damage: 40, type: 'medium' },
             { name: 'とっておき', damage: 60, type: 'heavy' }
         ]}
     ]
 };
 
-
-// --- FIREBASE STATE ---
+// --- STATE ---
 let app, auth, db;
-let appId = 'default-app-id'; // This will be replaced by __app_id
+let appId = 'default-app-id';
 let userId = null;
-let gameUnsubscribe = null; // To detach listener
+let gameUnsubscribe = null;
 let gameDocRef = null;
-let eventCodesUnsubscribe = null; // NEW: Listener for event codes
 
-// --- GAME STATE ---
 let playerPokemon = null;
-let opponentPokemon = null; // Renamed from aiPokemon
+let opponentPokemon = null;
 let playerHP = 100;
-let opponentHP = 100; // Renamed from aiHP
+let opponentHP = 100;
 let currentTurn = 1;
 let isPlayerTurn = true;
 let gameInProgress = false;
 let currentSelectionIndex = 0;
 let currentLanguage = 'en';
-let gameMode = 'ai'; // 'ai' or 'multiplayer'
+let gameMode = 'ai'; 
 let gameId = null;
-let localPlayerRole = null; // 'player1' or 'player2'
-let localPlayerName = null; // NEW
-let opponentPlayerName = null; // NEW
-let musicStarted = false; // NEW: To track if music has started
-// REVERTED: Removed Username state
-// let localPlayerUsername = null;
-// let opponentUsername = null;
-
-const MAX_TURNS = 20; // UPDATED: 10 per player (20 total)
-//REMOVED: const MISS_CHANCE = 0.5; // This is now dynamic
+let localPlayerRole = null;
+let localPlayerName = null;
+let opponentPlayerName = null;
+let musicStarted = false;
+let isEventGame = false;
+const MAX_TURNS = 20; 
 
 // --- DOM ELEMENTS ---
-// FIX: Changed all 'const' to 'let' so they can be assigned after DOM load
-let startScreen;
-let selectionScreen;
-let battleScreen;
-let victoryScreen;
-let helpScreen;
-let lobbyScreen; // NEW
+let startScreen, selectionScreen, battleScreen, victoryScreen, helpScreen, lobbyScreen, eventBattleScreen, usernameScreen;
+let playAiButton, playFriendButton, helpButton, helpButtonText, helpTitle, helpRule1, helpRule2, helpRule3, helpBackButton;
+let lobbyTitle, playerUserId, yourUserIdLabel, createGameButton, lobbyOrDivider, gameIdInput, joinGameButton, lobbyErrorMsg, waitingForPlayerMsg, gameIdDisplay, gameIdLabel, gameIdText, lobbyBackButton;
+let leaderboardBtn, leaderboardScreen, leaderboardList, leaderboardBackBtn;
+let pokemonCardDisplay, prevPokemonButton, nextPokemonButton, selectionTitle, waitingForOpponentSelection;
+let playerBox, opponentBox, opponentPokemonName, opponentHpText, opponentHpBar, opponentPokemonImg, playerUsernameEl, opponentUsernameEl;
+let playerPokemonName, playerHpText, playerHpBar, playerPokemonImg;
+let battleLog, battleLogStart, turnCounter, playerControls, yourTurnTitle, battleLogTitle;
+let endGameButton, winnerImg, victoryText, restartButton, mainTitle, languageToggleButton;
+let logReviewOverlay, logReviewTitle, logReviewContent, showLogButton, closeLogButton;
+let bgMusic;
+let usernameInput, saveUsernameBtn, usernameError, welcomeUserMsg;
 
-let playAiButton;
-let playFriendButton;
-let helpButton;
-let helpButtonText;
-let helpTitle;
-let helpRule1;
-let helpRule2;
-let helpRule3;
-let helpBackButton;
-
-// NEW: Lobby elements
-let lobbyTitle;
-let playerUserId;
-let yourUserIdLabel;
-let createGameButton;
-let lobbyOrDivider;
-let gameIdInput;
-let joinGameButton;
-let lobbyErrorMsg;
-let waitingForPlayerMsg;
-let gameIdDisplay;
-let gameIdLabel;
-let gameIdText;
-let lobbyBackButton;
-
-// NEW: Event Battle elements
-let eventBattleBtn;
-let eventBattleScreen;
-let eventBackBtn;
-let eventCodeInput1;
-let eventCodeInput2;
-// NEW: Remove buttons
-let removeBtn1;
-let removeBtn2;
-
-// REVERTED: Removed Username prompt elements
-let lobbyContentContainer;
-
-
-let pokemonCardDisplay;
-let prevPokemonButton;
-let nextPokemonButton;
-let selectionTitle; // NEW
-let waitingForOpponentSelection; // NEW
-
-let playerBox;
-let opponentBox; // Renamed
-
-// RENAMED: all 'ai-' vars to 'opponent-'
-let opponentPokemonName;
-let opponentHpText;
-let opponentHpBar;
-let opponentPokemonImg;
-
-// NEW: Username Display Elements
-let playerUsernameEl;
-let opponentUsernameEl;
-
-// REVERTED: Removed Username display elements
-
-let playerPokemonName;
-let playerHpText;
-let playerHpBar;
-let playerPokemonImg;
-
-let battleLog;
-let battleLogStart;
-let turnCounter;
-let playerControls;
-let yourTurnTitle;
-let battleLogTitle;
-
-let endGameButton;
-
-let winnerImg;
-let victoryText;
-// REVERTED: Removed winnerUsername
-let restartButton;
-let mainTitle;
-let languageToggleButton;
-
-// FIX: REMOVED videoOverlay and attackVideo
-// let videoOverlay;
-// let attackVideo;
-
-let logReviewOverlay;
-let logReviewTitle;
-let logReviewContent;
-let showLogButton;
-let closeLogButton;
-let bgMusic; // NEW: Background music element
+// EVENT VARS
+let eventBattleBtn, eventBackBtn;
+let eventLockedMsg, eventSignInUI, eventConfirmSignInBtn, eventSignInStatus;
+let eventBracketUI, eventRoundLabel, eventMatchesList;
+let eventStatusUnsubscribe = null;
+let eventRoundUnsubscribe = null;
 
 // --- FUNCTIONS ---
 
-/**
- * NEW: Assigns all DOM elements to variables.
- * Must be called *after* DOMContentLoaded.
- */
 function initDomElements() {
+    usernameScreen = document.getElementById('username-screen');
     startScreen = document.getElementById('start-screen');
     selectionScreen = document.getElementById('selection-screen');
     battleScreen = document.getElementById('battle-screen');
     victoryScreen = document.getElementById('victory-screen');
     helpScreen = document.getElementById('help-screen');
     lobbyScreen = document.getElementById('lobby-screen');
-    eventBattleScreen = document.getElementById('event-battle-screen'); // NEW
+    eventBattleScreen = document.getElementById('event-battle-screen');
+    leaderboardScreen = document.getElementById('leaderboard-screen');
 
     playAiButton = document.getElementById('play-ai-btn');
     playFriendButton = document.getElementById('play-friend-btn');
-    eventBattleBtn = document.getElementById('event-battle-btn'); // NEW
+    leaderboardBtn = document.getElementById('leaderboard-btn');
     helpButton = document.getElementById('help-btn');
     helpButtonText = document.getElementById('help-btn-text');
     helpTitle = document.getElementById('help-title');
@@ -461,7 +344,21 @@ function initDomElements() {
     helpRule3 = document.getElementById('help-rule-3');
     helpBackButton = document.getElementById('help-back-btn');
 
-    // NEW: Lobby elements
+    // EVENT BATTLE ELEMENTS
+    eventBattleBtn = document.getElementById('event-battle-btn');
+    eventBackBtn = document.getElementById('event-back-btn');
+    eventLockedMsg = document.getElementById('event-locked-msg');
+    eventSignInUI = document.getElementById('event-signin-ui');
+    eventConfirmSignInBtn = document.getElementById('event-confirm-signin-btn');
+    eventSignInStatus = document.getElementById('event-signin-status');
+    eventBracketUI = document.getElementById('event-bracket-ui');
+    eventRoundLabel = document.getElementById('event-round-label');
+    eventMatchesList = document.getElementById('event-matches-list');
+
+    // LEADERBOARD ELEMENTS
+    leaderboardList = document.getElementById('leaderboard-list');
+    leaderboardBackBtn = document.getElementById('leaderboard-back-btn');
+
     lobbyTitle = document.getElementById('lobby-title');
     playerUserId = document.getElementById('player-user-id');
     yourUserIdLabel = document.getElementById('your-user-id-label');
@@ -476,38 +373,20 @@ function initDomElements() {
     gameIdText = document.getElementById('game-id-text');
     lobbyBackButton = document.getElementById('lobby-back-btn');
 
-    // NEW: Event Battle DOM
-    eventBackBtn = document.getElementById('event-back-btn');
-    eventCodeInput1 = document.getElementById('event-code-3');
-    eventCodeInput2 = document.getElementById('event-code-2');
-    
-    // NEW: Remove Buttons
-    removeBtn1 = document.getElementById('remove-btn-1');
-    removeBtn2 = document.getElementById('remove-btn-2');
-
-    // REVERTED: Removed Username prompt elements
-    lobbyContentContainer = document.getElementById('lobby-content-container');
-
     pokemonCardDisplay = document.getElementById('pokemon-card-display');
     prevPokemonButton = document.getElementById('prev-pokemon');
     nextPokemonButton = document.getElementById('next-pokemon');
-    selectionTitle = document.getElementById('selection-title'); // NEW
-    waitingForOpponentSelection = document.getElementById('waiting-for-opponent-selection'); // NEW
+    selectionTitle = document.getElementById('selection-title');
+    waitingForOpponentSelection = document.getElementById('waiting-for-opponent-selection');
 
     playerBox = document.getElementById('player-box');
-    opponentBox = document.getElementById('opponent-box'); // Renamed
-
-    // RENAMED: all 'ai-' vars to 'opponent-'
+    opponentBox = document.getElementById('opponent-box');
     opponentPokemonName = document.getElementById('opponent-pokemon-name');
     opponentHpText = document.getElementById('opponent-hp-text');
     opponentHpBar = document.getElementById('opponent-hp-bar');
     opponentPokemonImg = document.getElementById('opponent-pokemon-img');
-
-    // NEW: Username Display Elements
     playerUsernameEl = document.getElementById('player-username');
     opponentUsernameEl = document.getElementById('opponent-username');
-
-    // REVERTED: Removed Username display elements
 
     playerPokemonName = document.getElementById('player-pokemon-name');
     playerHpText = document.getElementById('player-hp-text');
@@ -522,17 +401,11 @@ function initDomElements() {
     battleLogTitle = document.getElementById('battle-log-title');
 
     endGameButton = document.getElementById('end-game-btn');
-
     winnerImg = document.getElementById('winner-img');
     victoryText = document.getElementById('victory-text');
-    // REVERTED: Removed winnerUsername
     restartButton = document.getElementById('restart-button');
     mainTitle = document.getElementById('main-title');
     languageToggleButton = document.getElementById('language-toggle');
-
-    // FIX: REMOVED videoOverlay and attackVideo
-    // let videoOverlay;
-    // let attackVideo;
 
     logReviewOverlay = document.getElementById('log-review-overlay');
     logReviewTitle = document.getElementById('log-review-title');
@@ -540,13 +413,16 @@ function initDomElements() {
     showLogButton = document.getElementById('show-log-button');
     closeLogButton = document.getElementById('close-log-button');
 
-    bgMusic = document.getElementById('bg-music'); // NEW
+    bgMusic = document.getElementById('bg-music');
+    
+    // Username Elements
+    usernameInput = document.getElementById('username-input');
+    saveUsernameBtn = document.getElementById('save-username-btn');
+    usernameError = document.getElementById('username-error');
+    welcomeUserMsg = document.getElementById('welcome-user-msg');
 }
 
-
-/**
- * Gets a translated string from the UI_TEXT object.
- */
+// ... (getText, updateAllText, toggleLanguage, playBgMusic, initGame match previous logic) ...
 function getText(key, ...args) {
     const textOrFn = UI_TEXT[currentLanguage][key];
     if (typeof textOrFn === 'function') {
@@ -555,32 +431,25 @@ function getText(key, ...args) {
     return textOrFn || key;
 }
 
-/**
- * Updates all text elements on the screen to the current language.
- */
 function updateAllText() {
-    // Set body language attribute for CSS
     document.body.lang = currentLanguage;
 
-    // Start Screen
     if (!startScreen.classList.contains('hidden')) {
         mainTitle.textContent = getText('title_battle');
         mainTitle.style.color = '#6d47fb';
         playAiButton.textContent = getText('play_ai');
         playFriendButton.textContent = getText('play_friend');
-        // playFriendButton.dataset.maintenanceText = getText('maintenance'); // No longer needed
+        leaderboardBtn.textContent = getText('leaderboard');
         helpButtonText.textContent = getText('help');
+        if (localPlayerName) {
+            welcomeUserMsg.textContent = getText('welcome_user', localPlayerName);
+        }
     }
 
-    // Lobby Screen
     if (!lobbyScreen.classList.contains('hidden')) {
         mainTitle.classList.add('hidden');
-        
-        // REVERTED: Removed username prompt text
-
-        // Lobby content text
         lobbyTitle.textContent = getText('lobby_title');
-        yourUserIdLabel.textContent = getText('your_user-id');
+        yourUserIdLabel.textContent = getText('your_user_id');
         playerUserId.textContent = userId || '...';
         createGameButton.textContent = getText('create_game');
         lobbyOrDivider.textContent = getText('lobby_or');
@@ -591,7 +460,6 @@ function updateAllText() {
         lobbyBackButton.textContent = getText('lobby_back');
     }
 
-    // Help Screen
     if (!helpScreen.classList.contains('hidden')) {
         helpTitle.textContent = getText('help_title');
         helpRule1.textContent = getText('help_rule_1');
@@ -600,58 +468,48 @@ function updateAllText() {
         helpBackButton.textContent = getText('help_back');
     }
 
-    // Selection Screen
     if (!selectionScreen.classList.contains('hidden')) {
         mainTitle.classList.add('hidden');
         selectionTitle.textContent = getText('selection_title');
         waitingForOpponentSelection.textContent = getText('waiting_for_opponent_selection');
-        renderCurrentPokemonCard(); // Re-render card for language change
+        renderCurrentPokemonCard();
     }
 
-    // Battle Screen
     if (!battleScreen.classList.contains('hidden')) {
         mainTitle.classList.add('hidden');
         yourTurnTitle.textContent = getText(isPlayerTurn ? 'your_turn' : 'opponents_turn');
-        battleLogTitle.textContent = getText('battle-log');
+        battleLogTitle.textContent = getText('battle_log');
         endGameButton.textContent = getText('end_game');
 
         if (playerPokemon) {
-            // REVERTED: Removed username
-            const playerLangName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).name; // NEW
-            playerPokemonName.textContent = playerLangName; // REVERTED
+            const playerLangName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).name;
+            playerPokemonName.textContent = playerLangName;
             playerHpText.textContent = getText('hp_text', playerHP, 100);
-            // NEW: Update username element
             if (localPlayerName) playerUsernameEl.textContent = localPlayerName;
             createAttackButtons();
         }
         if (opponentPokemon) {
-            // REVERTED: Removed username
-            const opponentLangName = POKEMON_DATA[currentLanguage].find(p => p.id === opponentPokemon.id).name; // NEW
-            opponentPokemonName.textContent = opponentLangName; // REVERTED
+            const opponentLangName = POKEMON_DATA[currentLanguage].find(p => p.id === opponentPokemon.id).name;
+            opponentPokemonName.textContent = opponentLangName;
             opponentHpText.textContent = getText('hp_text', opponentHP, 100);
-            // NEW: Update username element
             if (opponentPlayerName) opponentUsernameEl.textContent = opponentPlayerName;
         }
-        turnCounter.textContent = getText('turn_counter', Math.min(Math.ceil(currentTurn / 2), MAX_TURNS / 2), MAX_TURNS / 2); // Show turn pair
+        turnCounter.textContent = getText('turn_counter', Math.min(Math.ceil(currentTurn / 2), MAX_TURNS / 2), MAX_TURNS / 2);
     }
 
-    // Victory Screen
     if (!victoryScreen.classList.contains('hidden')) {
         mainTitle.classList.add('hidden');
         restartButton.textContent = getText('play_again');
         
-        // REVERTED: Removed username logic
         if (victoryScreen.dataset.result) {
             const resultKey = victoryScreen.dataset.result;
-            
-            // UPDATED: Set victory text with player name
             if (resultKey === 'victory') {
                 victoryText.textContent = getText('victory', localPlayerName || 'Player');
                 victoryText.className = 'victory-text-base victory-text-win';
             } else if (resultKey === 'defeat') {
                 victoryText.textContent = getText('defeat', opponentPlayerName || 'Opponent');
                 victoryText.className = 'victory-text-base victory-text-lose';
-            } else { // Draw
+            } else {
                 victoryText.textContent = getText('draw');
                 victoryText.className = 'victory-text-base victory-text-draw';
             }
@@ -659,62 +517,54 @@ function updateAllText() {
         showLogButton.textContent = getText('view_log');
     }
 
-    // Log Review Screen
     logReviewTitle.textContent = getText('log_review_title');
-    closeLogButton.textContent = getText('help_back'); // Re-using 'back' text
-
-    // Language Toggle
+    closeLogButton.textContent = getText('help_back');
     languageToggleButton.textContent = (currentLanguage === 'en') ? '日本語' : 'English';
 }
 
-/**
- * Toggles the language and updates the UI.
- */
 function toggleLanguage() {
     currentLanguage = (currentLanguage === 'en') ? 'ja' : 'en';
     updateAllText();
 }
 
-// NEW: Function to play background music
 function playBgMusic() {
     if (musicStarted || !bgMusic) return;
-    bgMusic.volume = 0.7; // Set volume to 70% (reduced by 30%)
+    bgMusic.volume = 0.7;
     bgMusic.play().then(() => {
         musicStarted = true;
     }).catch(e => {
         console.error("Background music playback failed:", e);
-        // Autoplay is often blocked; music will wait for another interaction if this fails,
-        // but since it's tied to a click, it should work.
     });
 }
 
-
-// --- SCREEN NAVIGATION & RESETS ---
-
-/**
- * Initializes/Resets the game to the start screen.
- */
 function initGame() {
+    // Standard Reset
     startScreen.classList.remove('hidden');
+    usernameScreen.classList.add('hidden'); 
     selectionScreen.classList.add('hidden');
     battleScreen.classList.add('hidden');
     victoryScreen.classList.add('hidden');
     helpScreen.classList.add('hidden');
     lobbyScreen.classList.add('hidden');
-    eventBattleScreen.classList.add('hidden'); // NEW
+    eventBattleScreen.classList.add('hidden');
+    leaderboardScreen.classList.add('hidden');
     mainTitle.classList.remove('hidden');
     
-    // Detach any active game listener
     if (gameUnsubscribe) {
         gameUnsubscribe();
         gameUnsubscribe = null;
     }
-    // Clean up game doc if P1
+    
+    // Stop Event Listeners if we go back to main menu
+    if (eventStatusUnsubscribe) eventStatusUnsubscribe();
+    if (eventRoundUnsubscribe) eventRoundUnsubscribe();
+    
+    // Restart Listener only when needed (moved to showEventBattleScreen)
+
     if (gameDocRef && localPlayerRole === 'player1') {
         deleteDoc(gameDocRef).catch(e => console.error("Error cleaning up game doc", e));
     }
 
-    // Reset all game state variables
     playerPokemon = null;
     opponentPokemon = null;
     playerHP = 100;
@@ -726,16 +576,14 @@ function initGame() {
     gameMode = 'ai';
     gameId = null;
     localPlayerRole = null;
-    localPlayerName = null; // NEW
-    opponentPlayerName = null; // NEW
+    opponentPlayerName = null;
     gameDocRef = null;
+    isEventGame = false;
 
-    // Reset UI text and elements
     battleLog.innerHTML = `<p id="battle-log-start">${getText('log_welcome')}</p>`;
     logReviewContent.innerHTML = '';
     endGameButton.classList.add('hidden');
     
-    // Reset lobby UI
     gameIdInput.value = '';
     lobbyErrorMsg.textContent = '';
     waitingForPlayerMsg.classList.add('hidden');
@@ -744,120 +592,328 @@ function initGame() {
     joinGameButton.disabled = false;
     gameIdInput.disabled = false;
     
-    // REVERTED: Reset username prompt
-    // if (usernamePromptContainer) {
-    //     usernamePromptContainer.classList.add('hidden');
-    //     lobbyContentContainer.classList.remove('hidden');
-    // }
-
     updateAllText();
 }
 
-/**
- * Shows the Help screen.
- */
+// --- NEW EVENT SYSTEM LOGIC ---
+
+// 1. Show Screen & Start Listener
+function showEventBattleScreen() {
+    startScreen.classList.add('hidden');
+    eventBattleScreen.classList.remove('hidden');
+    mainTitle.classList.add('hidden');
+    
+    listenToEventStatus();
+}
+
+function hideEventBattleScreen() {
+    startScreen.classList.remove('hidden');
+    eventBattleScreen.classList.add('hidden');
+    mainTitle.classList.remove('hidden');
+    
+    if (eventStatusUnsubscribe) eventStatusUnsubscribe();
+    if (eventRoundUnsubscribe) eventRoundUnsubscribe();
+}
+
+// 2. Listen to Status (Locked, SignIn, Active)
+function listenToEventStatus() {
+    if (eventStatusUnsubscribe) eventStatusUnsubscribe();
+
+    const docRef = doc(db, `artifacts/${appId}/public/data/event_config/status`);
+    eventStatusUnsubscribe = onSnapshot(docRef, (snap) => {
+        const state = snap.data()?.state || 'locked';
+
+        eventLockedMsg.classList.add('hidden');
+        eventSignInUI.classList.add('hidden');
+        eventBracketUI.classList.add('hidden');
+        
+        if (state === 'locked') {
+            eventLockedMsg.classList.remove('hidden');
+        } else if (state === 'signin') {
+            eventSignInUI.classList.remove('hidden');
+            checkEventSignIn();
+        } else if (state === 'active') {
+            eventBracketUI.classList.remove('hidden');
+            listenToActiveRound();
+        }
+    });
+}
+
+// 3. Sign In Logic
+async function checkEventSignIn() {
+    if(!userId) return;
+    const ref = doc(db, `artifacts/${appId}/public/data/event_participants/${userId}`);
+    const snap = await getDoc(ref);
+    if(snap.exists()) {
+        eventConfirmSignInBtn.classList.add('hidden');
+        eventSignInStatus.classList.remove('hidden');
+    } else {
+        eventConfirmSignInBtn.classList.remove('hidden');
+        eventSignInStatus.classList.add('hidden');
+    }
+}
+
+async function signUserIntoEvent() {
+    if(!userId || !localPlayerName) return alert("Error: No username.");
+    eventConfirmSignInBtn.disabled = true;
+    try {
+        await setDoc(doc(db, `artifacts/${appId}/public/data/event_participants/${userId}`), {
+            userId: userId,
+            username: localPlayerName,
+            joinedAt: serverTimestamp()
+        });
+        checkEventSignIn();
+    } catch(e) {
+        console.error(e);
+        alert("Sign in failed.");
+        eventConfirmSignInBtn.disabled = false;
+    }
+}
+
+// 4. Bracket / Matchmaking Logic
+function listenToActiveRound() {
+    if (eventRoundUnsubscribe) eventRoundUnsubscribe();
+    
+    const ref = doc(db, `artifacts/${appId}/public/data/event_data/active_round`);
+    eventRoundUnsubscribe = onSnapshot(ref, (snap) => {
+        eventMatchesList.innerHTML = '';
+        if(!snap.exists()) {
+             eventMatchesList.innerHTML = '<p class="text-gray-400">Waiting for round to be published...</p>';
+             return;
+        }
+        
+        const data = snap.data();
+        eventRoundLabel.textContent = data.roundName || "Current Round";
+        
+        const matches = data.matches || [];
+        if(matches.length === 0) {
+            eventMatchesList.innerHTML = '<p class="text-gray-400">No matches in this round.</p>';
+            return;
+        }
+
+        matches.forEach(m => {
+            const card = document.createElement('div');
+            card.className = "bg-gray-800 border border-gray-600 rounded p-3 flex justify-between items-center";
+            
+            // Check if I am involved
+            const isMyMatch = (m.p1 === localPlayerName || m.p2 === localPlayerName);
+            const myColor = isMyMatch ? "border-yellow-400 border-2" : "";
+            if(isMyMatch) card.className = `bg-gray-800 rounded p-3 flex justify-between items-center ${myColor}`;
+
+            card.innerHTML = `
+                <div class="flex flex-col md:flex-row items-center gap-2 flex-1">
+                    <span class="text-blue-300 font-bold">${m.p1}</span>
+                    <span class="text-gray-500 text-xs">VS</span>
+                    <span class="text-red-300 font-bold">${m.p2}</span>
+                </div>
+            `;
+
+            if(isMyMatch) {
+                const btn = document.createElement('button');
+                btn.className = "retro-btn !text-xs !py-2 !px-4 ml-4 bg-green-600 animate-pulse";
+                btn.textContent = "FIGHT";
+                btn.onclick = () => joinEventGame(m.gameId, m.p1, m.p2);
+                card.appendChild(btn);
+            } else {
+                 const status = document.createElement('span');
+                 status.className = "text-xs text-gray-500 ml-4";
+                 status.textContent = "In Progress";
+                 card.appendChild(status);
+            }
+
+            eventMatchesList.appendChild(card);
+        });
+    });
+}
+
+async function joinEventGame(gId, p1Name, p2Name) {
+    // 1. Hide Event Screen
+    hideEventBattleScreen();
+    // 2. Prepare Game State locally
+    isEventGame = true;
+    gameId = gId;
+    
+    // 3. Determine Role based on name match
+    if(localPlayerName === p1Name) localPlayerRole = 'player1';
+    else if (localPlayerName === p2Name) localPlayerRole = 'player2';
+    else { alert("Name mismatch error."); return; }
+    
+    // 4. Set Ref & Listen
+    gameDocRef = doc(db, `artifacts/${appId}/public/data/games/${gameId}`);
+    
+    // 5. Trigger "Ready" on doc to show presence? (Optional, handled by selection screen)
+    
+    // 6. Go to Selection immediately via listener logic, but we trigger listener manually first
+    listenToGame();
+}
+
+
+// --- LEADERBOARD & OTHER LOGIC (UNCHANGED) ---
+
+async function showLeaderboard() {
+    startScreen.classList.add('hidden');
+    leaderboardScreen.classList.remove('hidden');
+    mainTitle.classList.add('hidden');
+    
+    leaderboardList.innerHTML = '<p class="text-gray-400 py-4">Loading top players...</p>';
+    
+    try {
+        const usersRef = collection(db, `artifacts/${appId}/public/data/registered_users`);
+        // Query top 10 by score desc
+        const q = query(usersRef, orderBy("score", "desc"), limit(10));
+        const snapshot = await getDocs(q);
+        
+        leaderboardList.innerHTML = '';
+        
+        if (snapshot.empty) {
+            leaderboardList.innerHTML = '<p class="text-gray-400 py-4">No scores yet.</p>';
+            return;
+        }
+        
+        let rank = 1;
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const score = data.score || 0;
+            const name = data.username || "Unknown";
+            
+            const div = document.createElement('div');
+            div.className = "grid grid-cols-3 gap-2 border-b border-white/10 py-2 items-center hover:bg-white/5";
+            
+            let rankClass = "text-white";
+            if (rank === 1) rankClass = "text-yellow-400 font-bold";
+            else if (rank === 2) rankClass = "text-gray-300 font-bold";
+            else if (rank === 3) rankClass = "text-orange-400 font-bold";
+            
+            div.innerHTML = `
+                <div class="${rankClass}">#${rank}</div>
+                <div class="truncate text-left">${name}</div>
+                <div class="text-green-400 font-mono">${score}</div>
+            `;
+            leaderboardList.appendChild(div);
+            rank++;
+        });
+        
+    } catch (e) {
+        console.error("Error fetching leaderboard:", e);
+        leaderboardList.innerHTML = '<p class="text-red-400 py-4">Error loading leaderboard.</p>';
+    }
+}
+
+function hideLeaderboard() {
+    leaderboardScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+    mainTitle.classList.remove('hidden');
+}
+
+async function incrementUserScore() {
+    if (!userId) return;
+    const userRef = doc(db, `artifacts/${appId}/public/data/registered_users/${userId}`);
+    try {
+        await updateDoc(userRef, {
+            score: increment(1)
+        });
+        console.log("Score incremented!");
+    } catch (e) {
+        console.error("Error updating score:", e);
+    }
+}
+
+// ... (Rest of logic: Username, Help, Selection, Firebase Init - Unchanged) ...
+
+async function checkUserProfile() {
+    if (!userId) return;
+    const userDocRef = doc(db, `artifacts/${appId}/public/data/registered_users/${userId}`);
+    try {
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+            localPlayerName = docSnap.data().username;
+            initGame();
+        } else {
+            startScreen.classList.add('hidden');
+            usernameScreen.classList.remove('hidden');
+            mainTitle.classList.remove('hidden');
+        }
+    } catch (e) {
+        console.error("Error checking profile:", e);
+    }
+}
+
+async function handleSaveUsername() {
+    const inputName = usernameInput.value.trim();
+    if (inputName.length < 3) {
+        usernameError.textContent = "Username must be at least 3 characters.";
+        return;
+    }
+    usernameError.textContent = "Checking availability...";
+    saveUsernameBtn.disabled = true;
+
+    const usersRef = collection(db, `artifacts/${appId}/public/data/registered_users`);
+    const q = query(usersRef, where("username", "==", inputName));
+    try {
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            usernameError.textContent = "Username already taken.";
+            saveUsernameBtn.disabled = false;
+            return;
+        }
+        const userDocRef = doc(db, `artifacts/${appId}/public/data/registered_users/${userId}`);
+        await setDoc(userDocRef, {
+            username: inputName,
+            userId: userId,
+            score: 0,
+            createdAt: serverTimestamp()
+        });
+        localPlayerName = inputName;
+        usernameError.textContent = "";
+        initGame();
+    } catch (e) {
+        console.error("Error saving username:", e);
+        usernameError.textContent = "Error saving. Try again.";
+        saveUsernameBtn.disabled = false;
+    }
+}
+
 function showHelpScreen() {
     startScreen.classList.add('hidden');
     helpScreen.classList.remove('hidden');
     mainTitle.classList.add('hidden');
     updateAllText();
 }
-
-/**
- * Hides the Help screen and returns to Start.
- */
 function hideHelpScreen() {
     startScreen.classList.remove('hidden');
     helpScreen.classList.add('hidden');
     mainTitle.classList.remove('hidden');
     updateAllText();
 }
-
-/**
- * NEW: Shows the Event Battle Screen.
- */
-function showEventBattleScreen() {
-    startScreen.classList.add('hidden');
-    eventBattleScreen.classList.remove('hidden');
-    mainTitle.classList.add('hidden');
-    
-    // Note: We don't need to load from localStorage here anymore, 
-    // the Firestore listener handles it.
-}
-
-/**
- * NEW: Hides the Event Battle Screen.
- */
-function hideEventBattleScreen() {
-    startScreen.classList.remove('hidden');
-    eventBattleScreen.classList.add('hidden');
-    mainTitle.classList.remove('hidden');
-}
-
-/**
- * Shows the AI selection screen.
- */
 function showAiSelectionScreen() {
-    playBgMusic(); // NEW: Start music
+    playBgMusic();
     gameMode = 'ai';
     startScreen.classList.add('hidden');
     selectionScreen.classList.remove('hidden');
     mainTitle.classList.add('hidden');
-    
-    // For AI, show selection UI immediately
     prevPokemonButton.classList.remove('hidden');
     nextPokemonButton.classList.remove('hidden');
     pokemonCardDisplay.classList.remove('hidden');
     selectionTitle.textContent = getText('selection_title');
     waitingForOpponentSelection.classList.add('hidden');
-    
     renderCurrentPokemonCard();
     updateAllText();
 }
-
-/**
- * NEW: Shows the Multiplayer Lobby screen.
- */
 function showLobbyScreen() {
-    playBgMusic(); // NEW: Start music
+    playBgMusic();
     gameMode = 'multiplayer';
     startScreen.classList.add('hidden');
     lobbyScreen.classList.remove('hidden');
     mainTitle.classList.add('hidden');
-    
-    // REVERTED: Removed username check
-    // Always show lobby content
-    lobbyContentContainer.classList.remove('hidden');
-    // usernamePromptContainer.classList.add('hidden');
-
     updateAllText();
 }
-
-/**
- * NEW: Confirms and saves the username.
- */
-// REVERTED: Removed function
-
-/**
- * NEW: Leaves the lobby and returns to the main menu.
- */
 function leaveLobby() {
-    // This will reset all state, detach listeners, and delete game docs
     initGame(); 
 }
 
-
-// --- POKÉMON SELECTION ---
-
-/**
- * Renders the currently selected Pokémon card.
- */
 function renderCurrentPokemonCard() {
     const pokemon = POKEMON_DATA[currentLanguage][currentSelectionIndex];
     const basePokemon = POKEMON_DATA['en'][currentSelectionIndex];
-    
-    // Card HTML
-    // FIX: Removed the broken onclick="" attribute from the div
     pokemonCardDisplay.innerHTML = `
         <div id="pokemon-card-clickable" class="pokemon-card w-full max-w-[300px] mx-auto p-4 rounded-lg border-4 shadow-lg cursor-pointer type-${basePokemon.type}-bg type-${basePokemon.type}-border">
             <h3 class="text-xl md:text-2xl font-bold text-center mb-3 type-${basePokemon.type}-text">${pokemon.name}</h3>
@@ -872,178 +928,113 @@ function renderCurrentPokemonCard() {
             </div>
         </div>
     `;
-
-    // FIX: Add event listener programmatically
-    // Functions in modules are not global, so "onclick" in HTML fails.
     const cardElement = document.getElementById('pokemon-card-clickable');
     if (cardElement) {
         cardElement.addEventListener('click', () => selectPokemon(basePokemon.id));
     }
 }
-
-/**
- * Shows the previous Pokémon in the selection list.
- */
 function showPrevPokemon() {
     currentSelectionIndex = (currentSelectionIndex - 1 + POKEMON_DATA[currentLanguage].length) % POKEMON_DATA[currentLanguage].length;
     renderCurrentPokemonCard();
 }
-
-/**
- * Shows the next Pokémon in the selection list.
- */
 function showNextPokemon() {
     currentSelectionIndex = (currentSelectionIndex + 1) % POKEMON_DATA[currentLanguage].length;
     renderCurrentPokemonCard();
 }
-
-/**
- * Handles the final selection of a Pokémon.
- */
 async function selectPokemon(id) {
     const basePokemon = POKEMON_DATA['en'].find(p => p.id === id);
-    // Create a deep copy to avoid modifying the original data
     playerPokemon = JSON.parse(JSON.stringify(basePokemon));
-
-    // FIX: Add a unique instance ID to ensure identical Pokemon (same ID) are treated as distinct entities
-    // This prevents logic errors when both players select the same Pokemon
     playerPokemon.instanceId = `${localPlayerRole}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     if (gameMode === 'ai') {
-        // --- AI Mode Selection ---
-        // AI chooses a different Pokémon
         let aiIndex = Math.floor(Math.random() * POKEMON_DATA['en'].length);
         while (aiIndex === currentSelectionIndex) {
             aiIndex = Math.floor(Math.random() * POKEMON_DATA['en'].length);
         }
         const baseAiPokemon = POKEMON_DATA['en'][aiIndex];
         opponentPokemon = JSON.parse(JSON.stringify(baseAiPokemon));
-        
-        // Start the battle
         startBattle();
     } else {
-        // --- Multiplayer Mode Selection ---
-        // Update the game doc with player's choice
         try {
             await updateDoc(gameDocRef, {
                 [`${localPlayerRole}.pokemon`]: playerPokemon,
-                [`${localPlayerRole}.pokemonId`]: id, // Store ID for language
+                [`${localPlayerRole}.pokemonId`]: id,
                 [`${localPlayerRole}.ready`]: true
             });
-            
-            // Show waiting screen
             prevPokemonButton.classList.add('hidden');
             nextPokemonButton.classList.add('hidden');
             pokemonCardDisplay.classList.add('hidden');
             selectionTitle.textContent = getText('selection_title');
             waitingForOpponentSelection.classList.remove('hidden');
-
         } catch (e) {
             console.error("Error selecting Pokemon:", e);
         }
     }
 }
 
-
-// --- FIREBASE MULTIPLAYER ---
-
-/**
- * Initializes Firebase app and auth.
- */
 async function initFirebase() {
     try {
-        // Use provided __app_id if available
         appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        
-        // Use provided config if available, otherwise use the one in the script
         const config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-
         app = initializeApp(config);
         db = getFirestore(app);
         auth = getAuth(app);
-        
-        setLogLevel('debug'); // Enable Firestore debug logging
-
-        // Sign in
+        setLogLevel('debug');
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
             await signInWithCustomToken(auth, __initial_auth_token);
         } else {
             await signInAnonymously(auth);
         }
-
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 userId = user.uid;
                 playerUserId.textContent = userId;
                 console.log("Firebase Auth Ready. UserID:", userId);
-                // Now that auth is ready, initialize the game UI
-                initGame();
-                startEventCodeListener(); // NEW: Start listening to global event codes
+                checkUserProfile(); 
             } else {
                 console.log("Firebase Auth: No user.");
                 userId = null;
-                // You could disable multiplayer here
             }
         });
-
     } catch (e) {
         console.error("Error initializing Firebase:", e);
-        // Show an error to the user
         playFriendButton.textContent = 'Multiplayer Disabled';
         playFriendButton.disabled = true;
     }
 }
-
-
-/**
- * NEW: Creates a new game in Firestore.
- */
 async function createGame() {
     createGameButton.disabled = true;
     joinGameButton.disabled = true;
     gameIdInput.disabled = true;
     lobbyErrorMsg.textContent = '';
-    
-    // Public game collection
     const gamesCollection = collection(db, `artifacts/${appId}/public/data/games`);
-    
     try {
-        const newGameDoc = doc(gamesCollection); // Create a new doc with a random ID
+        const newGameDoc = doc(gamesCollection);
         gameId = newGameDoc.id;
-        
         const player1Data = {
             hp: 100,
             pokemon: null,
-            pokemonId: null, // NEW
+            pokemonId: null,
             ready: false,
-            // REVERTED: Removed username
-            // username: localPlayerUsername 
+            username: localPlayerName 
         };
-        
         const gameData = {
             player1: player1Data,
             player2: null,
-            gameState: 'waiting', // waiting, p1_turn, p2_turn, game_over
+            gameState: 'waiting',
             currentTurn: 1,
             winner: null,
-            log: [getText('log_welcome')], // Start with a welcome message
+            log: [getText('log_welcome')],
             createdAt: serverTimestamp(),
             lastAction: serverTimestamp()
         };
-
         await setDoc(newGameDoc, gameData);
-        
         gameDocRef = newGameDoc;
         localPlayerRole = 'player1';
-
-        // Show game ID and wait
         gameIdText.textContent = gameId;
         gameIdDisplay.classList.remove('hidden');
         waitingForPlayerMsg.classList.remove('hidden');
-        
-        // Listen for game changes
         listenToGame();
-
     } catch (e) {
         console.error("Error creating game:", e);
         lobbyErrorMsg.textContent = getText('lobby_error_creating');
@@ -1052,135 +1043,92 @@ async function createGame() {
         gameIdInput.disabled = false;
     }
 }
-
-/**
- * NEW: Joins an existing game in Firestore.
- */
 async function joinGame() {
     gameId = gameIdInput.value.trim();
     if (!gameId) return;
-
     createGameButton.disabled = true;
     joinGameButton.disabled = true;
     gameIdInput.disabled = true;
     lobbyErrorMsg.textContent = '';
-    
-    // Public game doc path
     const gameRef = doc(db, `artifacts/${appId}/public/data/games/${gameId}`);
-    
     try {
         const gameSnap = await getDoc(gameRef);
-        if (!gameSnap.exists()) {
-            throw new Error("Game not found");
-        }
-        
+        if (!gameSnap.exists()) throw new Error("Game not found");
         const gameData = gameSnap.data();
-        
-        // Check if game is full
-        if (gameData.player2) {
-            throw new Error("Game is full");
+        if (isEventGame) {
+             // Redundant check, but safe
+            if (gameData.player1 && gameData.player1.username === localPlayerName) localPlayerRole = 'player1';
+            else if (gameData.player2 && gameData.player2.username === localPlayerName) localPlayerRole = 'player2';
+            else throw new Error("You are not assigned to this match!");
+            gameDocRef = gameRef;
+            listenToGame();
+            return; 
         }
-        
+        if (gameData.player2) throw new Error("Game is full");
         const player2Data = {
             hp: 100,
             pokemon: null,
-            pokemonId: null, // NEW
+            pokemonId: null,
             ready: false,
-            // REVERTED: Removed username
-            // username: localPlayerUsername
+            username: localPlayerName 
         };
-
         await updateDoc(gameRef, {
             player2: player2Data,
-            gameState: 'selection', // Both players joined, move to selection
-            log: arrayUnion('Player 2 has joined!') // Simple log
+            gameState: 'selection',
+            log: arrayUnion(`${localPlayerName} has joined!`)
         });
-
         gameDocRef = gameRef;
         localPlayerRole = 'player2';
-
-        // Listen for game changes
         listenToGame();
-
     } catch (e) {
         console.error("Error joining game:", e);
-        lobbyErrorMsg.textContent = getText('lobby_error_joining');
+        lobbyErrorMsg.textContent = getText('lobby_error_joining') + " " + e.message;
         createGameButton.disabled = false;
         joinGameButton.disabled = false;
         gameIdInput.disabled = false;
     }
 }
-
-/**
- * NEW: Listens to real-time updates for the current game.
- */
 function listenToGame() {
-    if (gameUnsubscribe) {
-        gameUnsubscribe(); // Detach old listener if any
-    }
-    
+    if (gameUnsubscribe) gameUnsubscribe();
     gameUnsubscribe = onSnapshot(gameDocRef, (doc) => {
         if (!doc.exists()) {
-            // Game was deleted (maybe by P1)
-            console.log("Game document deleted.");
             if (gameInProgress) {
-                 // Opponent probably left, show forfeit
                 logMessage(getText('log_opponent_forfeit'));
                 showVictoryScreen(playerPokemon, 'victory');
             } else {
-                // If not in game, just go back to menu
                 initGame();
             }
             return;
         }
-
         const gameData = doc.data();
+        if (gameData.isEvent) isEventGame = true;
         const opponentRole = localPlayerRole === 'player1' ? 'player2' : 'player1';
-
-        // --- Update Local State from Firestore ---
         currentTurn = gameData.currentTurn;
-        
-        // REVERTED: Removed username syncing
-        // if (gameData[opponentRole]) {
-        //     opponentUsername = gameData[opponentRole].username || null;
-        // }
-
-        if (gameData[localPlayerRole]) {
-            playerHP = gameData[localPlayerRole].hp;
+        if (gameData[opponentRole] && gameData[opponentRole].username) {
+            opponentPlayerName = gameData[opponentRole].username;
         }
+        if (gameData[localPlayerRole]) playerHP = gameData[localPlayerRole].hp;
         if (gameData[opponentRole]) {
             opponentHP = gameData[opponentRole].hp;
-            opponentPokemon = gameData[opponentRole].pokemon; // Get opponent's chosen Pokemon
+            opponentPokemon = gameData[opponentRole].pokemon;
         }
-        
-        // Update battle log
         if (gameData.log && battleLog) {
-            // Only update log if it's different (simple check)
             const logLength = battleLog.children.length;
             if (gameData.log.length > logLength || (logLength === 1 && battleLog.children[0].id === 'battle-log-start')) {
-                battleLog.innerHTML = ''; // Clear log
-                gameData.log.forEach(msg => {
-                    logMessage(msg); // Add messages from Firestore
-                });
+                battleLog.innerHTML = '';
+                gameData.log.forEach(msg => logMessage(msg));
             }
         }
-
-        // --- Handle Game State ---
         switch (gameData.gameState) {
             case 'waiting':
-                // P1 is waiting for P2
                 lobbyScreen.classList.remove('hidden');
                 selectionScreen.classList.add('hidden');
                 waitingForPlayerMsg.classList.remove('hidden');
                 break;
-                
             case 'selection':
-                // Both players joined, move to selection screen
                 lobbyScreen.classList.add('hidden');
                 selectionScreen.classList.remove('hidden');
                 mainTitle.classList.add('hidden');
-                
-                // Check if *we* are ready
                 if (gameData[localPlayerRole] && gameData[localPlayerRole].ready) {
                     prevPokemonButton.classList.add('hidden');
                     nextPokemonButton.classList.add('hidden');
@@ -1188,7 +1136,6 @@ function listenToGame() {
                     selectionTitle.textContent = getText('selection_title');
                     waitingForOpponentSelection.classList.remove('hidden');
                 } else {
-                    // We are not ready, show selection
                     prevPokemonButton.classList.remove('hidden');
                     nextPokemonButton.classList.remove('hidden');
                     pokemonCardDisplay.classList.remove('hidden');
@@ -1196,41 +1143,29 @@ function listenToGame() {
                     waitingForOpponentSelection.classList.add('hidden');
                     renderCurrentPokemonCard();
                 }
-                
-                // Check if *both* are ready
                 if (gameData.player1.ready && gameData.player2.ready) {
                     playerPokemon = gameData[localPlayerRole].pokemon;
                     opponentPokemon = gameData[opponentRole].pokemon;
-                    
-                    // P1 starts the battle logic
                     if (localPlayerRole === 'player1' && !gameInProgress) {
                         updateDoc(gameDocRef, {
-                            gameState: 'player1_turn', // FIX: Was 'p1_turn'
+                            gameState: 'player1_turn',
                             log: arrayUnion(getText('log_player_chose', gameData.player1.pokemon.name), getText('log_opponent_chose', gameData.player2.pokemon.name), getText('log_battle_begin'))
                         });
                     }
-                    // Both players call startBattle() to set up UI
-                    if (!gameInProgress) {
-                        startBattle();
-                    }
+                    if (!gameInProgress) startBattle();
                 }
                 break;
-                
             case 'player1_turn':
                 isPlayerTurn = (localPlayerRole === 'player1');
                 if (gameInProgress) updateUI();
                 break;
-                
             case 'player2_turn':
                 isPlayerTurn = (localPlayerRole === 'player2');
                 if (gameInProgress) updateUI();
                 break;
-                
             case 'game_over':
-                if (!gameInProgress) return; // Don't show victory twice
+                if (!gameInProgress) return;
                 gameInProgress = false;
-                
-                // Determine result from our perspective
                 if (gameData.winner === localPlayerRole) {
                     showVictoryScreen(playerPokemon, 'victory');
                 } else if (gameData.winner === opponentRole) {
@@ -1240,121 +1175,56 @@ function listenToGame() {
                 }
                 break;
         }
-        
     }, (error) => {
         console.error("Error in game listener:", error);
-        // Handle error, maybe show a disconnect message
     });
 }
-
-/**
- * NEW: Listens to global event codes for the battle screen.
- */
-function startEventCodeListener() {
-    if (eventCodesUnsubscribe) eventCodesUnsubscribe();
-    // Path: artifacts/{appId}/public/data/event_data/global
-    const docRef = doc(db, `artifacts/${appId}/public/data/event_data/global`);
-    eventCodesUnsubscribe = onSnapshot(docRef, (docSnap) => {
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            // Check if element is focused to avoid overwriting while typing
-            if (eventCodeInput1 && document.activeElement !== eventCodeInput1) {
-                 eventCodeInput1.value = data.row1 || '';
-            }
-            if (eventCodeInput2 && document.activeElement !== eventCodeInput2) {
-                 eventCodeInput2.value = data.row2 || '';
-            }
-        }
-    });
-}
-
-/**
- * NEW: Saves event code to Firestore (helper function).
- */
-function saveEventCode(row, value) {
-    if (!db) return;
-    const docRef = doc(db, `artifacts/${appId}/public/data/event_data/global`);
-    // Use merge: true to ensure the document exists and we only update the specific field
-    setDoc(docRef, { [row]: value }, { merge: true }).catch(e => console.error("Error saving code:", e));
-}
-
-
-// --- BATTLE LOGIC ---
-
-/**
- * Toggles the language and updates the UI.
- */
 function startBattle() {
     gameInProgress = true;
     selectionScreen.classList.add('hidden');
     lobbyScreen.classList.add('hidden');
     battleScreen.classList.remove('hidden');
     mainTitle.classList.add('hidden');
-
     endGameButton.textContent = getText('end_game');
     endGameButton.classList.remove('hidden');
-
-    // Setup UI
     const playerLangData = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id);
     const opponentLangData = POKEMON_DATA[currentLanguage].find(p => p.id === opponentPokemon.id);
-
-    // NEW: Set Player 1 / Player 2 names
     if (gameMode === 'multiplayer') {
-        localPlayerName = getText(localPlayerRole === 'player1' ? 'player1_name' : 'player2_name');
-        opponentPlayerName = getText(localPlayerRole === 'player1' ? 'player2_name' : 'player1_name');
     } else {
-        // Handle AI mode names
-        localPlayerName = getText('player1_name'); // You are P1
-        opponentPlayerName = 'AI'; // Or a translated name
+        opponentPlayerName = 'AI';
     }
-    
-    // Set Player UI
     playerUsernameEl.textContent = localPlayerName;
     playerUsernameEl.className = `text-sm md:text-lg font-bold text-center md:text-left truncate type-${playerPokemon.type}-text`;
     playerPokemonName.textContent = playerLangData.name;
     playerPokemonImg.src = playerPokemon.image;
     playerPokemonName.className = `text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left type-${playerPokemon.type}-text`;
     playerBox.className = `p-1 md:p-4 rounded-lg border-2 shadow-md type-${playerPokemon.type}-bg type-${playerPokemon.type}-border`;
-
-    // Set Opponent UI
     opponentUsernameEl.textContent = opponentPlayerName;
     opponentUsernameEl.className = `text-sm md:text-lg font-bold text-center md:text-left truncate type-${opponentPokemon.type}-text`;
     opponentPokemonName.textContent = opponentLangData.name; 
     opponentPokemonImg.src = opponentPokemon.image;
     opponentPokemonName.className = `text-[0.625rem] md:text-base font-normal leading-tight text-center md:text-left type-${opponentPokemon.type}-text`;
     opponentBox.className = `p-1 md:p-4 rounded-lg border-2 shadow-md type-${opponentPokemon.type}-bg type-${opponentPokemon.type}-border`;
-
     createAttackButtons();
-
-    // Reset log only for AI mode
     if (gameMode === 'ai') {
         battleLog.innerHTML = '';
         logMessage(getText('log_player_chose', playerLangData.name));
         logMessage(getText('log_ai_chose', opponentLangData.name));
         logMessage(getText('log_battle_begin'));
     }
-
     yourTurnTitle.textContent = getText(isPlayerTurn ? 'your_turn' : 'opponents_turn');
-    battleLogTitle.textContent = getText('battle-log');
-
+    battleLogTitle.textContent = getText('battle_log');
     updateUI();
 }
-
-/**
- * Creates and populates attack buttons.
- */
 function createAttackButtons() {
     playerControls.innerHTML = '';
     if (!playerPokemon) return;
-    
     const playerLangData = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id);
-
     playerLangData.attacks.forEach((attack, index) => {
         const baseAttack = playerPokemon.attacks[index];
         const button = document.createElement('button');
         button.textContent = attack.name;
         button.className = `retro-btn !leading-tight !px-2 !pt-2 !pb-3 md:!p-4 attack-btn type-${playerPokemon.type}-btn w-full`;
-
         if (baseAttack.type === 'heavy') {
             button.id = 'heavy-attack-btn';
             button.classList.add('heavy-attack-disabled');
@@ -1363,72 +1233,39 @@ function createAttackButtons() {
         button.addEventListener('click', () => playerAttack(index));
         playerControls.appendChild(button);
     });
-    
-    // Update button states immediately
     updateUI();
 }
-
-/**
- * Generates a video file name from an attack name.
- */
-// FIX: REMOVED getAttackVideoSrc function
-
-/**
-* NEW: Calculates miss chance based on attack.
-*/
 function getMissChance(attack) {
-    if (attack.type === 'medium') {
-        return 0.7; // 70% miss chance
-    }
-    return 0.4; // 40% miss chance
+    if (attack.type === 'medium') return 0.7;
+    return 0.4;
 }
-
-/**
-* Handles the player's attack action.
-*/
 async function playerAttack(attackIndex) {
     if (!isPlayerTurn || !gameInProgress) return;
-
     const attack = playerPokemon.attacks[attackIndex];
     const attackName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).attacks[attackIndex].name;
     const pokemonName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).name;
-
-    // FIX: Corrected heavy attack logic. Fail if HP is >= 50.
     if (attack.type === 'heavy' && playerHP >= 50) {
         logMessage(getText('log_heavy_fail', attackName));
-        // In AI mode, this doesn't cost a turn. In multiplayer, we'll make it not cost a turn either.
         if (gameMode === 'multiplayer') {
-             await updateDoc(gameDocRef, {
-                log: arrayUnion(getText('log_heavy_fail', attackName))
-            });
+             await updateDoc(gameDocRef, { log: arrayUnion(getText('log_heavy_fail', attackName)) });
         }
-        return; // Don't waste the turn
+        return; 
     }
-
     isPlayerTurn = false;
-    updateUI(); // Disable buttons immediately
-
-    // FIX: REMOVED all video logic
-    // --- Post-video logic ---
-    // This logic is now instant
+    updateUI(); 
     animateAttack(playerPokemonImg, true);
-
-    // USE new miss chance logic
     const missChance = getMissChance(attack);
     const missReasons = MISS_MESSAGES[currentLanguage];
     let damage = 0;
     let didMiss = false;
     let missReason = '';
-
     if (Math.random() < missChance) {
         didMiss = true;
         missReason = missReasons[Math.floor(Math.random() * missReasons.length)];
     } else {
         damage = attack.damage;
     }
-
     if (gameMode === 'ai') {
-        // --- AI Mode Logic ---
         logMessage(getText('log_player_command', pokemonName, attackName));
         if (didMiss) {
             logMessage(getText('log_miss', missReason));
@@ -1441,19 +1278,15 @@ async function playerAttack(attackIndex) {
         if (checkGameOver()) return;
         setTimeout(aiTurn, 1500);
     } else {
-        // --- Multiplayer Mode Logic ---
         const opponentRole = localPlayerRole === 'player1' ? 'player2' : 'player1';
         const newOpponentHP = Math.max(0, opponentHP - damage);
-        const nextTurn = currentTurn + 1; // Increment turn
-        
+        const nextTurn = currentTurn + 1;
         const logMessages = [getText('log_player_command', pokemonName, attackName)];
         if (didMiss) {
             logMessages.push(getText('log_miss', missReason));
         } else {
             logMessages.push(getText('log_hit', attackName, damage));
         }
-
-        // Prepare update for Firestore
         const updateData = {
             currentTurn: nextTurn,
             gameState: `${opponentRole}_turn`,
@@ -1461,8 +1294,6 @@ async function playerAttack(attackIndex) {
             log: arrayUnion(...logMessages),
             lastAction: serverTimestamp()
         };
-        
-        // Check for game over
         let gameOver = false;
         const opponentLangName = POKEMON_DATA[currentLanguage].find(p => p.id === opponentPokemon.id).name;
         if (newOpponentHP <= 0) {
@@ -1474,7 +1305,7 @@ async function playerAttack(attackIndex) {
         } else if (nextTurn > MAX_TURNS) {
             updateData.gameState = 'game_over';
             logMessages.push(getText('log_times_up'));
-            if (playerHP > newOpponentHP) { // Compare current player HP to new opponent HP
+            if (playerHP > newOpponentHP) {
                 updateData.winner = localPlayerRole;
                 logMessages.push(getText('log_player_hp_win'));
             } else if (newOpponentHP > playerHP) {
@@ -1487,32 +1318,16 @@ async function playerAttack(attackIndex) {
             updateData.log = arrayUnion(...logMessages);
             gameOver = true;
         }
-        
-        // Send update to Firestore
         updateDoc(gameDocRef, updateData).catch(e => console.error("Error during attack:", e));
     }
 }
-
-
-/**
-* Simulates the AI's turn and logic. (Only for AI mode)
-*/
 function aiTurn() {
     if (!gameInProgress || gameMode !== 'ai') return;
-
     const { attack, attackName, pokemonName } = getAiAttack();
-
-    // FIX: REMOVED all video logic
-    // --- Post-video logic ---
-    // This logic is now instant
-    animateAttack(opponentPokemonImg, false); // 'false' for opponent animation
-
+    animateAttack(opponentPokemonImg, false);
     logMessage(getText('log_ai_attack', pokemonName, attackName));
-    
-    // USE new miss chance logic
     const missChance = getMissChance(attack);
     const missReasons = MISS_MESSAGES[currentLanguage];
-
     if (Math.random() < missChance) {
         logMessage(getText('log_miss', missReasons[Math.floor(Math.random() * missReasons.length)]));
     } else {
@@ -1521,41 +1336,29 @@ function aiTurn() {
         logMessage(getText('log_hit', attackName, damage));
         animateDamage(playerPokemonImg);
     }
-
     currentTurn++;
     isPlayerTurn = true;
     updateUI();
     checkGameOver();
 }
-
-/**
-* "Smart" AI logic to select an attack.
-*/
 function getAiAttack() {
     const attacks = opponentPokemon.attacks;
     const heavyAttack = attacks.find(a => a.type === 'heavy');
-    // Updated to use 'medium' type
     const mediumAttack = attacks.find(a => a.type === 'medium');
     const basicAttacks = attacks.filter(a => a.damage === 20);
-
     const aiLangData = POKEMON_DATA[currentLanguage].find(p => p.id === opponentPokemon.id);
     const pokemonName = aiLangData.name;
     let chosenAttack = null;
-
-    // Rule 1: If AI HP < 50, high chance to use Heavy Attack.
     if (heavyAttack && opponentHP < 50 && Math.random() < 0.75) {
         logMessage(getText('log_ai_focus', pokemonName));
         chosenAttack = heavyAttack;
     }
-    // Rule 2: If Player HP is low, try to finish.
     else if (playerHP <= 40) {
         chosenAttack = (heavyAttack && opponentHP < 50) ? heavyAttack : (mediumAttack || basicAttacks[0]);
     }
-    // Rule 3: If Player HP is very low, use medium to be safe
     else if (playerHP <= 20) {
         chosenAttack = mediumAttack || basicAttacks[0];
     }
-    // Rule 4: Otherwise, random choice, weighted towards medium.
     else {
         const randomChoice = Math.random();
         if (mediumAttack && randomChoice < 0.4) {
@@ -1566,38 +1369,27 @@ function getAiAttack() {
             chosenAttack = basicAttacks[1] || basicAttacks[0];
         }
     }
-
     if (!chosenAttack) {
         chosenAttack = basicAttacks[Math.floor(Math.random() * basicAttacks.length)];
     }
-
     const attackIndex = attacks.findIndex(a => a.name === chosenAttack.name);
     const attackName = aiLangData.attacks[attackIndex].name;
-
     return { attack: chosenAttack, attackName, pokemonName };
 }
-
-/**
-* Checks if the game is over (AI Mode ONLY).
-*/
 function checkGameOver() {
-    // This function is only for AI mode. Multiplayer game over is handled in playerAttack.
     if (gameMode !== 'ai' || !gameInProgress) return true;
-
     const playerLangName = POKEMON_DATA[currentLanguage].find(p => p.id === playerPokemon.id).name;
     const aiLangName = POKEMON_DATA[currentLanguage].find(p => p.id === opponentPokemon.id).name;
-
     if (opponentHP <= 0) {
         logMessage(getText('log_ai_fainted', aiLangName));
-        showVictoryScreen(playerPokemon, 'victory'); // Pass winner
+        showVictoryScreen(playerPokemon, 'victory'); 
         return true;
     }
     if (playerHP <= 0) {
         logMessage(getText('log_player_fainted', playerLangName));
-        showVictoryScreen(opponentPokemon, 'defeat'); // Pass winner
+        showVictoryScreen(opponentPokemon, 'defeat'); 
         return true;
     }
-
     if (currentTurn > MAX_TURNS) {
         logMessage(getText('log_times_up'));
         if (playerHP > opponentHP) {
@@ -1614,26 +1406,13 @@ function checkGameOver() {
     }
     return false;
 }
-
-/**
-* Updates all dynamic UI elements (HP bars, text, buttons).
-*/
 function updateUI() {
-    // Update HP Text
     playerHpText.textContent = getText('hp_text', playerHP, 100);
     opponentHpText.textContent = getText('hp_text', opponentHP, 100);
-
-    // Update HP bar color and width
     updateHpBar(playerHpBar, playerHP);
     updateHpBar(opponentHpBar, opponentHP);
-
-    // Update Turn Counter
     turnCounter.textContent = getText('turn_counter', Math.min(Math.ceil(currentTurn / 2), MAX_TURNS / 2), MAX_TURNS / 2);
-    
-    // Update Turn Title
     yourTurnTitle.textContent = getText(isPlayerTurn ? 'your_turn' : 'opponents_turn');
-
-    // Update Attack Buttons
     const heavyBtn = document.getElementById('heavy-attack-btn');
     if (heavyBtn) {
         if (playerHP < 50) {
@@ -1646,27 +1425,18 @@ function updateUI() {
             heavyBtn.disabled = true;
         }
     }
-
-    // Disable all buttons if not player's turn or game is over
     playerControls.querySelectorAll('button').forEach(btn => {
-        // Master disable
         if (!isPlayerTurn || !gameInProgress) {
             btn.disabled = true;
         } 
-        // Re-enable if it IS our turn
         else if (btn.id !== 'heavy-attack-btn') {
             btn.disabled = false;
         } 
-        // Special check for heavy button
         else if (btn.id === 'heavy-attack-btn') {
              btn.disabled = (playerHP >= 50);
         }
     });
 }
-
-/**
-* Updates an HP bar's width and color based on percentage.
-*/
 function updateHpBar(barElement, currentHp) {
     if (!barElement) return;
     const hpPercent = currentHp / 100;
@@ -1674,25 +1444,13 @@ function updateHpBar(barElement, currentHp) {
     const backgroundPosition = 100 - (hpPercent * 100);
     barElement.style.backgroundPosition = `${backgroundPosition}% 50%`;
 }
-
-
-/**
-* Displays the victory screen.
-*/
 function showVictoryScreen(winner, messageKey) {
     gameInProgress = false;
-
-    // Capture the final log
     logReviewContent.innerHTML = battleLog.innerHTML;
     logReviewContent.scrollTop = logReviewContent.scrollHeight;
-
     endGameButton.classList.add('hidden');
     victoryScreen.dataset.result = messageKey;
-    
-    // Clear old text
-    // REVERTED: Removed winnerUsername
     victoryText.textContent = '';
-
     if (winner) {
         winnerImg.src = winner.image.includes('placehold.co') ? winner.image.replace('150x150', '320x320') : winner.image;
         winnerImg.className = `w-full h-full object-cover rounded-full shadow-lg border-8 type-${winner.type}-border`;
@@ -1700,47 +1458,38 @@ function showVictoryScreen(winner, messageKey) {
         winnerImg.src = 'https://placehold.co/320x320/EFEFEF/333?text=DRAW';
         winnerImg.className = 'w-full h-full object-cover rounded-full shadow-lg border-8 border-gray-500';
     }
-
-    // Set text content
     if (messageKey === 'victory') {
         victoryText.textContent = getText('victory', localPlayerName || 'Player');
         victoryText.className = 'victory-text-base victory-text-win';
+        if (gameMode === 'multiplayer' || isEventGame) {
+            incrementUserScore();
+        }
     } else if (messageKey === 'defeat') {
         victoryText.textContent = getText('defeat', opponentPlayerName || 'Opponent');
         victoryText.className = 'victory-text-base victory-text-lose';
-    } else { // Draw
+    } else {
         victoryText.textContent = getText('draw');
         victoryText.className = 'victory-text-base victory-text-draw';
     }
-
     restartButton.textContent = getText('play_again');
     showLogButton.textContent = getText('view_log');
-
-    // Detach listener and clean up game doc
     if (gameUnsubscribe) {
         gameUnsubscribe();
         gameUnsubscribe = null;
     }
     if (gameDocRef && localPlayerRole === 'player1') {
-        // P1 is responsible for cleaning up the game doc after a delay
         setTimeout(() => {
             deleteDoc(gameDocRef).catch(e => console.error("Error cleaning up game", e));
             gameDocRef = null;
             gameId = null;
-        }, 10000); // Clean up after 10 seconds
+        }, 10000); 
     }
-
-
     setTimeout(() => {
         battleScreen.classList.add('hidden');
         victoryScreen.classList.remove('hidden');
         mainTitle.classList.add('hidden');
     }, 1000);
 }
-
-/**
-* Adds a message to the battle log and scrolls down.
-*/
 function logMessage(message, forceClear = false) {
     if (forceClear) {
         battleLog.innerHTML = '';
@@ -1750,37 +1499,24 @@ function logMessage(message, forceClear = false) {
     battleLog.appendChild(p);
     battleLog.scrollTop = battleLog.scrollHeight;
 }
-
-/**
-* Handles manually ending the game (forfeit).
-*/
 async function endGame() {
-    if (!gameInProgress) return; // FIX: Don't do anything if game is already over
-    
+    if (!gameInProgress) return; 
     if (gameMode === 'ai') {
-        gameInProgress = false; // AI mode can end immediately
+        gameInProgress = false; 
         logMessage(getText('log_forfeit'));
         setTimeout(() => {
             showVictoryScreen(opponentPokemon, 'defeat');
         }, 500);
     } else {
-        // Multiplayer forfeit
-        // FIX: Do NOT set gameInProgress = false here.
-        // Let the snapshot listener handle the game over state.
         const opponentRole = localPlayerRole === 'player1' ? 'player2' : 'player1';
         await updateDoc(gameDocRef, {
             gameState: 'game_over',
             winner: opponentRole,
             log: arrayUnion(getText('log_forfeit'))
         });
-        // The onSnapshot listener will see 'game_over' and call showVictoryScreen
     }
-    updateUI(); // Disable all buttons
+    updateUI();
 }
-
-/**
-* Triggers a visual "damage" animation.
-*/
 function animateDamage(imgElement) {
     if(!imgElement) return;
     imgElement.classList.add('taking-damage');
@@ -1788,13 +1524,8 @@ function animateDamage(imgElement) {
         imgElement.classList.remove('taking-damage');
     }, 300);
 }
-
-/**
-* Triggers a visual "attack" animation.
-*/
 function animateAttack(imgElement, isPlayer) {
     if(!imgElement) return;
-    // RENAMED: .ai-attacking to .opponent-attacking
     const attackClass = isPlayer ? 'attacking' : 'opponent-attacking';
     imgElement.classList.add(attackClass);
     setTimeout(() => {
@@ -1802,57 +1533,30 @@ function animateAttack(imgElement, isPlayer) {
     }, 200);
 }
 
-
-// --- EVENT LISTENERS ---
-// FIX: Moved all event listeners into a function
 function initEventListeners() {
     restartButton.addEventListener('click', initGame);
     endGameButton.addEventListener('click', endGame);
     playAiButton.addEventListener('click', showAiSelectionScreen);
     playFriendButton.addEventListener('click', showLobbyScreen);
     
-    // NEW: Event Battle Listeners
+    // NEW EVENT LISTENERS
     eventBattleBtn.addEventListener('click', showEventBattleScreen);
     eventBackBtn.addEventListener('click', hideEventBattleScreen);
-    
-    // NEW: Save inputs on change (Debounced to avoid too many writes)
-    let debounceTimer;
-    eventCodeInput1.addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => saveEventCode('row1', e.target.value), 500);
-    });
-    eventCodeInput2.addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => saveEventCode('row2', e.target.value), 500);
-    });
+    eventConfirmSignInBtn.addEventListener('click', signUserIntoEvent);
 
-    // NEW: Remove Button Listeners (Now saves empty string to Firestore)
-    if (removeBtn1) {
-        removeBtn1.addEventListener('click', () => {
-            saveEventCode('row1', '');
-        });
-    }
-    if (removeBtn2) {
-        removeBtn2.addEventListener('click', () => {
-             saveEventCode('row2', '');
-        });
-    }
+    leaderboardBtn.addEventListener('click', showLeaderboard);
+    leaderboardBackBtn.addEventListener('click', hideLeaderboard);
 
     helpButton.addEventListener('click', showHelpScreen);
     helpBackButton.addEventListener('click', hideHelpScreen);
-
     prevPokemonButton.addEventListener('click', showPrevPokemon);
     nextPokemonButton.addEventListener('click', showNextPokemon);
-
     languageToggleButton.addEventListener('click', toggleLanguage);
-
-    // NEW: Lobby Listeners
-    // REVERTED: Removed confirmUsername listener
     createGameButton.addEventListener('click', createGame);
     joinGameButton.addEventListener('click', joinGame);
     lobbyBackButton.addEventListener('click', leaveLobby);
+    saveUsernameBtn.addEventListener('click', handleSaveUsername);
 
-    // Log Review Listeners
     showLogButton.addEventListener('click', () => {
         logReviewOverlay.classList.remove('hidden');
         logReviewTitle.textContent = getText('log_review_title');
@@ -1862,16 +1566,8 @@ function initEventListeners() {
     closeLogButton.addEventListener('click', () => {
         logReviewOverlay.classList.add('hidden');
     });
-
-
-    // FIX: REMOVED video error handler
 }
+initDomElements();
+initEventListeners();
+initFirebase();
 
-// --- START FIREBASE & GAME ---
-// UPDATED: Remove DOMContentLoaded listener.
-// This script is type="module" and at the end of the <body>,
-// so the DOM is guaranteed to be ready when this code executes.
-initDomElements(); // 1. Find all elements
-initEventListeners(); // 2. Attach all listeners
-
-initFirebase(); // 3. Start Firebase auth, which will then call initGame()
